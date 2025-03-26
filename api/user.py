@@ -2,17 +2,17 @@ import uuid
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Request
 from sqlmodel import select
 
 from db import SessionDep
 from models.error import Error
-from models.user import User, UserCreate, UserRead, UserUpdate
+from models.user import User, UserCreate, UserLogin, UserRead, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get("/")
+@router.get("/", dependencies=[Depends(User.is_admin)])
 def read_users(
     session: SessionDep,
     offset: int = 0,
@@ -22,7 +22,7 @@ def read_users(
     return users
 
 
-@router.put("/")
+@router.put("/", dependencies=[Depends(User.is_admin)])
 def create_user(session: SessionDep, user: UserCreate) -> UserRead | Error:
     try:
         if session.exec(select(User).where(User.username == user.username)).first():
@@ -37,7 +37,7 @@ def create_user(session: SessionDep, user: UserCreate) -> UserRead | Error:
         return Error(message=str(e))
 
 
-@router.get("/{user_id}")
+@router.get("/{user_id}", dependencies=[Depends(User.is_admin)])
 def read_user(user_id: uuid.UUID, session: SessionDep) -> UserRead | Error:
     try:
         user = session.get(User, user_id)
@@ -48,7 +48,7 @@ def read_user(user_id: uuid.UUID, session: SessionDep) -> UserRead | Error:
         return Error(message=str(e))
 
 
-@router.patch("/{user_id}")
+@router.patch("/{user_id}", dependencies=[Depends(User.is_admin)])
 def update_user(
     user_id: uuid.UUID, user: UserUpdate, session: SessionDep
 ) -> UserRead | Error:
@@ -70,7 +70,7 @@ def update_user(
         return Error(message=str(e))
 
 
-@router.delete("/{user_id}")
+@router.delete("/{user_id}", dependencies=[Depends(User.is_admin)])
 def delete_user(user_id: uuid.UUID, session: SessionDep) -> None | Error:
     try:
         user = session.get(User, user_id)
@@ -83,15 +83,21 @@ def delete_user(user_id: uuid.UUID, session: SessionDep) -> None | Error:
 
 
 @router.post("/login")
-def login(username: str, password: str, session: SessionDep) -> UserRead | Error:
+def login(request: Request, login: UserLogin, session: SessionDep) -> UserRead | Error:
     try:
-        user = session.exec(select(User).where(User.username == username)).first()
+        user = session.exec(select(User).where(User.username == login.username)).first()
         if not user:
             return Error(message="用户名或密码错误")
         try:
-            PasswordHasher().verify(user.password, password)
+            PasswordHasher().verify(user.password, login.password)
         except VerifyMismatchError:
             return Error(message="用户名或密码错误")
+        request.session["uid"] = user.id.hex
         return user
     except Exception as e:
         return Error(message=str(e))
+
+
+@router.post("/logout")
+def logout(request: Request) -> None:
+    request.session.clear()

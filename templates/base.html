@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="description" content="CyberEye - 网络空间测绘" />
+    <meta name="keywords" content="网络空间测绘" />
+    <title>{% block title %}{% endblock title %} | CyberEye</title>
+    <link rel="stylesheet" href="/static/css/antd.min.css" />
+    <script src="/static/js/vue.min.js"></script>
+    <script src="/static/js/moment.min.js"></script>
+    <script src="/static/js/antd.min.js"></script>
+    <script src="/static/js/axios.min.js"></script>
+    <style>
+      .mobile-warning {
+        display: none;
+      }
+      @media (max-width: 768px) {
+        body {
+          background: #f0f2f5;
+          height: 100vh;
+          margin: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .mobile-warning {
+          display: block;
+        }
+        .ant-layout {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="mobile-warning">
+        <a-alert
+          message="兼容性警告"
+          description="移动端不支持此应用，请使用桌面设备访问"
+          type="warning"
+          show-icon
+        ></a-alert>
+      </div>
+      <a-layout style="min-height: 100vh">
+        <a-layout-sider
+          theme="dark"
+          v-model="collapsed"
+          collapsible
+          :trigger="null"
+        >
+          <div
+            class="logo"
+            style="
+              height: 64px;
+              padding: 16px;
+              color: white;
+              text-align: center;
+              overflow: hidden;
+              white-space: nowrap;
+            "
+          >
+            {% raw %}
+            <h2 style="margin: 0; color: white">
+              {{ collapsed ? 'CE' : 'CyberEye' }}
+            </h2>
+            {% endraw %}
+          </div>
+          <a-menu
+            theme="dark"
+            mode="inline"
+            :default-selected-keys="['{% block menu_key %}{% endblock %}']"
+            :inline-collapsed="collapsed"
+            @click="handleMenuClick"
+          >
+            <a-menu-item key="files">
+              <a-icon type="folder"></a-icon>
+              <span>文件管理</span>
+            </a-menu-item>
+            {% if user.role == 'admin' %}
+            <a-menu-item key="logs">
+              <a-icon type="file-text"></a-icon>
+              <span>任务管理</span>
+            </a-menu-item>
+            <a-menu-item key="users">
+              <a-icon type="team"></a-icon>
+              <span>用户管理</span>
+            </a-menu-item>
+            {% endif %}
+          </a-menu>
+        </a-layout-sider>
+        <a-layout>
+          <a-layout-header
+            style="
+              background: #001529;
+              padding: 0 16px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <div style="display: flex; align-items: center">
+              <a-icon
+                class="trigger"
+                :type="collapsed ? 'menu-unfold' : 'menu-fold'"
+                style="font-size: 18px; color: white; cursor: pointer"
+                @click="() => {
+                  collapsed = !collapsed
+                  window.localStorage.setItem('collapsed', collapsed)
+                }"
+              ></a-icon>
+              <span
+                style="
+                  font-size: 16px;
+                  font-weight: 500;
+                  color: white;
+                  margin-left: 16px;
+                "
+              >
+                {{ self.title() }}
+              </span>
+            </div>
+            <div style="display: flex; align-items: center">
+              <a-dropdown>
+                <a class="ant-dropdown-link" style="color: white">
+                  <a-icon type="user"></a-icon>
+                  {{ user.username }}
+                  <a-icon type="down"></a-icon>
+                </a>
+                <a-menu slot="overlay">
+                  <a-menu-item
+                    key="change_password"
+                    @click="showChangePasswordModal"
+                  >
+                    <a-icon type="lock"></a-icon>
+                    修改密码
+                  </a-menu-item>
+                  <a-menu-divider></a-menu-divider>
+                  <a-menu-item key="logout" @click="handleLogout">
+                    <a-icon type="logout"></a-icon>
+                    退出登录
+                  </a-menu-item>
+                </a-menu>
+              </a-dropdown>
+            </div>
+          </a-layout-header>
+          {% block content %}{% endblock %}
+        </a-layout>
+      </a-layout>
+      {% block modal %}{% endblock %}
+      <a-modal
+        :visible="changePasswordVisible"
+        title="修改密码"
+        @ok="handleChangePassword"
+        @cancel="changePasswordVisible = false"
+        :ok-text="'确定'"
+        :cancel-text="'取消'"
+      >
+        <a-form-item label="当前密码">
+          <a-input-password
+            v-model="changePasswordForm.old_password"
+            placeholder="请输入当前密码"
+          ></a-input-password>
+        </a-form-item>
+        <a-form-item label="新密码">
+          <a-input-password
+            v-model="changePasswordForm.new_password"
+            placeholder="请输入新密码"
+          ></a-input-password>
+          <div style="color: #999; font-size: 12px; margin-top: 4px">
+            密码要求：长度至少12位，必须包含大小写字母、数字和特殊字符
+          </div>
+        </a-form-item>
+        <a-form-item label="确认新密码">
+          <a-input-password
+            v-model="changePasswordForm.confirm_password"
+            placeholder="请再次输入新密码"
+          ></a-input-password>
+        </a-form-item>
+      </a-modal>
+    </div>
+    {% block script %}{% endblock %}
+  </body>
+</html>

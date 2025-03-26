@@ -1,7 +1,10 @@
 import uuid
 from datetime import datetime
 
-from sqlmodel import Field, SQLModel
+from fastapi import HTTPException, Request
+from sqlmodel import Field, SQLModel, select
+
+from db import SessionDep
 
 
 class UserBase(SQLModel):
@@ -17,6 +20,40 @@ class User(UserBase, table=True):
         default_factory=datetime.now,
         sa_column_kwargs={"onupdate": lambda: datetime.now()},
     )
+
+    @staticmethod
+    def is_authenticated(request: Request, session: SessionDep) -> None:
+        if (
+            not request.session.get("uid")
+            or not session.exec(
+                select(User).where(User.id == uuid.UUID(request.session.get("uid")))
+            ).first()
+        ):
+            request.session.clear()
+            raise HTTPException(status_code=401, detail="Unauthenticated")
+        return session.exec(
+            select(User).where(User.id == uuid.UUID(request.session.get("uid")))
+        ).first()
+
+    @staticmethod
+    def is_admin(request: Request, session: SessionDep) -> None:
+        if (
+            not request.session.get("uid")
+            or not session.exec(
+                select(User).where(User.id == uuid.UUID(request.session.get("uid")))
+            ).first()
+            or session.exec(
+                select(User).where(User.id == uuid.UUID(request.session.get("uid")))
+            )
+            .first()
+            .role
+            != "admin"
+        ):
+            request.session.clear()
+            raise HTTPException(status_code=401, detail="Unauthenticated")
+        return session.exec(
+            select(User).where(User.id == uuid.UUID(request.session.get("uid")))
+        ).first()
 
 
 class UserRead(SQLModel):
