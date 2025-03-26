@@ -1,12 +1,13 @@
-from fastapi import APIRouter
-from db import SessionDep
-from sqlmodel import select
-from models.user import User, UserCreate, UserRead, UserUpdate
-from models.error import Error
-from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError
 import uuid
 
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
+from fastapi import APIRouter
+from sqlmodel import select
+
+from db import SessionDep
+from models.error import Error
+from models.user import User, UserCreate, UserRead, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
 

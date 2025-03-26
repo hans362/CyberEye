@@ -39,9 +39,10 @@ while True:
             session.add(task)
             session.commit()
             session.refresh(task)
-        except Exception:
+        except Exception as e:
             session.rollback()
             task.status = "failed"
+            task.message = str(e)
             session.add(task)
             session.commit()
             session.refresh(task)

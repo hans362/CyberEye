@@ -1,5 +1,6 @@
-from datetime import datetime
 import uuid
+from datetime import datetime
+
 from sqlmodel import Column, Field, SQLModel, Text
 
 
@@ -9,8 +10,9 @@ class TaskBase(SQLModel):
     input: str = Field(sa_column=Column(Text))
     output: str = Field(sa_column=Column(Text))
     status: str = Field(default="pending", max_length=32)
+    message: str = Field(default="", sa_column=Column(Text))
     nonce: str = Field(default="", max_length=128)
-    job_id: uuid.UUID = Field(foreign_key="job.id")
+    job_id: uuid.UUID = Field(foreign_key="job.id", ondelete="CASCADE")
 
 
 class Task(TaskBase, table=True):
@@ -20,3 +22,17 @@ class Task(TaskBase, table=True):
         default_factory=datetime.now,
         sa_column_kwargs={"onupdate": lambda: datetime.now()},
     )
+
+
+class TaskRead(SQLModel):
+    id: uuid.UUID
+    name: str
+    method_name: str
+    input: str
+    output: str
+    status: str
+    message: str
+    nonce: str
+    job_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime

@@ -1,5 +1,6 @@
-from datetime import datetime
 import uuid
+from datetime import datetime
+
 from sqlmodel import Column, Field, SQLModel, Text
 
 
@@ -7,10 +8,9 @@ class JobBase(SQLModel):
     name: str = Field(max_length=128)
     domain: str = Field(max_length=256)
     description: str = Field(sa_column=Column(Text))
-    status: str = Field(
-        default="pending", max_length=32
-    )  # pending, running, completed, failed
-    owner_id: uuid.UUID = Field(foreign_key="user.id")
+    status: str = Field(default="pending", max_length=32)
+    message: str = Field(default="", sa_column=Column(Text))
+    owner_id: uuid.UUID = Field(foreign_key="user.id", ondelete="CASCADE")
 
 
 class Job(JobBase, table=True):
@@ -35,6 +35,17 @@ class JobRead(SQLModel):
     domain: str
     description: str
     status: str
+    message: str
     owner_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+
+class JobTaskRead(SQLModel):
+    id: uuid.UUID
+    name: str
+    method_name: str
+    status: str
+    message: str
     created_at: datetime
     updated_at: datetime

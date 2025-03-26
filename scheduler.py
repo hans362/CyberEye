@@ -1,7 +1,7 @@
 import json
 from time import sleep
 
-from sqlmodel import select
+from sqlmodel import select, update
 
 from db import Session, engine
 from models.job import Job
@@ -30,9 +30,10 @@ def enter_subdomain_collect_stage():
             session.add(task)
             session.commit()
             session.refresh(job)
-        except Exception:
+        except Exception as e:
             session.rollback()
             job.status = "failed"
+            job.message = str(e)
             session.add(job)
             session.commit()
             session.refresh(job)
@@ -72,9 +73,10 @@ def enter_ip_resolve_stage():
                     ]
                 )
             session.commit()
-        except Exception:
+        except Exception as e:
             session.rollback()
             job.status = "failed"
+            job.message = str(e)
             session.add(job)
             session.commit()
             session.refresh(job)
@@ -83,6 +85,12 @@ def enter_ip_resolve_stage():
             subdomains = session.exec(
                 select(SubDomain).where(SubDomain.job_id == job.id)
             ).all()
+            if len(subdomains) == 0:
+                job.status = "completed"
+                session.add(job)
+                session.commit()
+                session.refresh(job)
+                continue
             session.add_all(
                 [
                     Task(
@@ -97,9 +105,10 @@ def enter_ip_resolve_stage():
                 ]
             )
             session.commit()
-        except Exception:
+        except Exception as e:
             session.rollback()
             job.status = "failed"
+            job.message = str(e)
             session.add(job)
             session.commit()
             session.refresh(job)
@@ -126,10 +135,18 @@ def enter_port_scan_stage():
         q = q.where(Task.job_id == job.id)
         q = q.where(Task.method_name == "ip_resolve")
         ip_tasks = session.exec(q).all()
+        if len(ip_tasks) == 0:
+            continue
         try:
             ips = set()
             for task in ip_tasks:
                 ips.update(json.loads(task.output))
+            if len(ips) == 0:
+                job.status = "completed"
+                session.add(job)
+                session.commit()
+                session.refresh(job)
+                continue
             session.add_all(
                 [
                     IPAddr(
@@ -157,9 +174,10 @@ def enter_port_scan_stage():
                     ]
                 )
             session.commit()
-        except Exception:
+        except Exception as e:
             session.rollback()
             job.status = "failed"
+            job.message = str(e)
             session.add(job)
             session.commit()
             session.refresh(job)
@@ -180,9 +198,10 @@ def enter_port_scan_stage():
                 ]
             )
             session.commit()
-        except Exception:
+        except Exception as e:
             session.rollback()
             job.status = "failed"
+            job.message = str(e)
             session.add(job)
             session.commit()
             session.refresh(job)
@@ -209,6 +228,8 @@ def enter_service_scan_stage():
         q = q.where(Task.job_id == job.id)
         q = q.where(Task.method_name == "port_scan")
         port_tasks = session.exec(q).all()
+        if len(port_tasks) == 0:
+            continue
         try:
             for task in port_tasks:
                 ports = json.loads(task.output)
@@ -222,9 +243,10 @@ def enter_service_scan_stage():
                 ip.ports = ",".join([str(port) for port in ports if port])
                 session.add(ip)
             session.commit()
-        except Exception:
+        except Exception as e:
             session.rollback()
             job.status = "failed"
+            job.message = str(e)
             session.add(job)
             session.commit()
             session.refresh(job)
@@ -252,9 +274,10 @@ def enter_service_scan_stage():
                 ]
             )
             session.commit()
-        except Exception:
+        except Exception as e:
             session.rollback()
             job.status = "failed"
+            job.message = str(e)
             session.add(job)
             session.commit()
             session.refresh(job)
@@ -276,6 +299,8 @@ def enter_end_stage():
         q = q.where(Task.job_id == job.id)
         q = q.where(Task.method_name == "service_scan")
         service_tasks = session.exec(q).all()
+        if len(service_tasks) == 0:
+            continue
         try:
             for task in service_tasks:
                 services = json.loads(task.output)
@@ -298,9 +323,10 @@ def enter_end_stage():
                     ]
                 )
             session.commit()
-        except Exception:
+        except Exception as e:
             session.rollback()
             job.status = "failed"
+            job.message = str(e)
             session.add(job)
             session.commit()
             session.refresh(job)
@@ -312,7 +338,22 @@ def enter_end_stage():
     session.close()
 
 
+def mark_failed_jobs():
+    session = Session(engine)
+    failed_jobs_ids = session.exec(
+        select(Task.job_id).where(Task.status == "failed")
+    ).all()
+    session.exec(
+        update(Job)
+        .where(Job.id.in_(failed_jobs_ids))
+        .values(status="failed", message="一个或多个测绘任务失败")
+    )
+    session.commit()
+    session.close()
+
+
 while True:
+    mark_failed_jobs()
     enter_subdomain_collect_stage()
     enter_ip_resolve_stage()
     enter_port_scan_stage()

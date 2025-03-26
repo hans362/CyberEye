@@ -14,6 +14,7 @@ def service_scan_ssh(ip: str, ports: list[int]) -> list[dict[str, int | str]]:
 
 
 def service_scan(ip: str, ports: list[int]) -> list[dict[str, int | str]]:
+    raise Exception("Not implemented")
     return list(
         service_scan_http(ip, ports)
         + service_scan_https(ip, ports)

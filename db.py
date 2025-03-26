@@ -1,18 +1,15 @@
 from typing import Annotated
-from fastapi import Depends, FastAPI, Request
-from fastapi.responses import RedirectResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from sqlmodel import SQLModel, Session, create_engine, select
-from models.user import User
-from models.task import Task
-from models.job import Job
-from models.report import SubDomain, IPAddr, SubDomainIPAddr, Service
+from fastapi import Depends
+from sqlmodel import SQLModel, Session, create_engine
 
-database_name = "cybereye"
-database_url = f"mysql+pymysql://root:root@localhost:13306/{database_name}?charset=utf8mb4"
+DATABASE_HOST = "localhost"
+DATABASE_PORT = 13306
+DATABASE_USER = "root"
+DATABASE_PASSWORD = "root"
+DATABASE_NAME = "cybereye"
+DATABASE_URL = f"mysql+pymysql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}?charset=utf8mb4"
 
-engine = create_engine(database_url)
+engine = create_engine(DATABASE_URL)
 
 
 def create_db_and_tables():
