@@ -1,0 +1,6 @@
+fastapi[standard]
+jinja2
+sqlmodel
+argon2-cffi
+PyMySQL
+cryptography
