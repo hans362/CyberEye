@@ -5,6 +5,7 @@ from models.user import User, UserCreate, UserRead, UserUpdate
 from models.error import Error
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
+import uuid
 
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -36,7 +37,7 @@ def create_user(session: SessionDep, user: UserCreate) -> UserRead | Error:
 
 
 @router.get("/{user_id}")
-def read_user(user_id: str, session: SessionDep) -> UserRead | Error:
+def read_user(user_id: uuid.UUID, session: SessionDep) -> UserRead | Error:
     try:
         user = session.get(User, user_id)
         if not user:
@@ -48,7 +49,7 @@ def read_user(user_id: str, session: SessionDep) -> UserRead | Error:
 
 @router.patch("/{user_id}")
 def update_user(
-    user_id: str, user: UserUpdate, session: SessionDep
+    user_id: uuid.UUID, user: UserUpdate, session: SessionDep
 ) -> UserRead | Error:
     try:
         db_user = session.get(User, user_id)
@@ -69,7 +70,7 @@ def update_user(
 
 
 @router.delete("/{user_id}")
-def delete_user(user_id: str, session: SessionDep) -> None | Error:
+def delete_user(user_id: uuid.UUID, session: SessionDep) -> None | Error:
     try:
         user = session.get(User, user_id)
         if not user:

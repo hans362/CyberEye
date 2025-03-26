@@ -1,16 +1,21 @@
-def service_scan_http(ip: str, ports: list[int]) -> dict[int, str]:
-    return {80: "HTTP/1.1 200 OK"}
+def service_scan_http(ip: str, ports: list[int]) -> list[dict[str, int | str]]:
+    return [
+        {"port": 80, "banner": "HTTP/1.1 200 OK", "protocol": "HTTP"},
+        {"port": 8080, "banner": "HTTP/1.1 200 OK", "protocol": "HTTP"},
+    ]
 
 
-def service_scan_https(ip: str, ports: list[int]) -> dict[int, str]:
-    return {443: "HTTP/1.1 200 OK"}
+def service_scan_https(ip: str, ports: list[int]) -> list[dict[str, int | str]]:
+    return [{"port": 443, "banner": "HTTP/1.1 200 OK", "protocol": "HTTPS"}]
 
 
-def service_scan_ssh(ip: str, ports: list[int]) -> dict[int, str]:
-    return {22: "SSH-2.0-OpenSSH_7.9p1 Debian-10+deb10u2"}
+def service_scan_ssh(ip: str, ports: list[int]) -> list[dict[str, int | str]]:
+    return [{"port": 22, "banner": "SSH-2.0-OpenSSH_7.9", "protocol": "SSH"}]
 
 
-def service_scan(ips: list[str], ports: list[int]) -> dict[str, dict[int, str]]:
-    return {
-        
-    }
+def service_scan(ip: str, ports: list[int]) -> list[dict[str, int | str]]:
+    return list(
+        service_scan_http(ip, ports)
+        + service_scan_https(ip, ports)
+        + service_scan_ssh(ip, ports)
+    )

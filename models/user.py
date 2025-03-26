@@ -1,6 +1,6 @@
 from datetime import datetime
-from uuid import uuid4
 from sqlmodel import Field, SQLModel
+import uuid
 
 
 class UserBase(SQLModel):
@@ -10,7 +10,7 @@ class UserBase(SQLModel):
 
 
 class User(UserBase, table=True):
-    id: str = Field(default=str(uuid4()), primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(
         default_factory=datetime.now,
@@ -19,7 +19,7 @@ class User(UserBase, table=True):
 
 
 class UserRead(SQLModel):
-    id: str
+    id: uuid.UUID
     username: str
     role: str
     created_at: datetime
