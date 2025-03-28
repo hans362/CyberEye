@@ -5,7 +5,7 @@ from time import sleep
 from sqlmodel import select, text
 
 from db import Session, engine
-from models.task import Task
+from models import *
 from tasks.domain import ip_resolve, subdomain_collect
 from tasks.port import port_scan
 from tasks.service import service_scan

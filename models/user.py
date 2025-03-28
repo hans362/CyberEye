@@ -79,3 +79,8 @@ class UserUpdate(SQLModel):
 class UserLogin(SQLModel):
     username: str
     password: str
+
+
+class MeUpdate(SQLModel):
+    old_password: str
+    new_password: str

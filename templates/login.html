@@ -142,6 +142,10 @@
                 password: this.password
               })
               .then(response => {
+                if (response.data.message || response.data.detail) {
+                  this.$message.error(response.data.message || response.data.detail);
+                  return;
+                }
                 this.$message.success('登录成功');
                 window.location.href = '/';
               })

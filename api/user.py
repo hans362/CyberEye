@@ -7,7 +7,8 @@ from sqlmodel import select
 
 from db import SessionDep
 from models.error import Error
-from models.user import User, UserCreate, UserLogin, UserRead, UserUpdate
+from models.user import (MeUpdate, User, UserCreate, UserLogin, UserRead,
+                         UserUpdate)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -98,6 +99,34 @@ def login(request: Request, login: UserLogin, session: SessionDep) -> UserRead |
         return Error(message=str(e))
 
 
-@router.post("/logout")
+@router.post("/logout", dependencies=[Depends(User.is_authenticated)])
 def logout(request: Request) -> None:
     request.session.clear()
+
+
+@router.get("/me", dependencies=[Depends(User.is_authenticated)])
+def read_me(request: Request, session: SessionDep) -> UserRead | Error:
+    try:
+        user = User.is_authenticated(request, session)
+        return user
+    except Exception as e:
+        return Error(message=str(e))
+
+
+@router.post("/me", dependencies=[Depends(User.is_authenticated)])
+def update_me(
+    request: Request, user: MeUpdate, session: SessionDep
+) -> UserRead | Error:
+    try:
+        db_user = User.is_authenticated(request, session)
+        try:
+            PasswordHasher().verify(db_user.password, user.old_password)
+        except VerifyMismatchError:
+            return Error(message="旧密码错误")
+        db_user.password = PasswordHasher().hash(user.new_password)
+        session.add(db_user)
+        session.commit()
+        session.refresh(db_user)
+        return db_user
+    except Exception as e:
+        return Error(message=str(e))

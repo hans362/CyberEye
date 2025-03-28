@@ -59,3 +59,14 @@ def login(request: Request, session: SessionDep):
         return RedirectResponse("/")
     except Exception:
         return templates.TemplateResponse("login.html", {"request": request})
+
+
+@app.get("/jobs")
+def jobs(request: Request, session: SessionDep):
+    try:
+        user = User.is_authenticated(request, session)
+        return templates.TemplateResponse(
+            "jobs.html", {"request": request, "user": user}
+        )
+    except Exception:
+        return RedirectResponse("/login")

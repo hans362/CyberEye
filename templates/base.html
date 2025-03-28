@@ -73,15 +73,19 @@
             :inline-collapsed="collapsed"
             @click="handleMenuClick"
           >
-            <a-menu-item key="files">
-              <a-icon type="folder"></a-icon>
-              <span>文件管理</span>
+            <a-menu-item key="index">
+              <a-icon type="home"></a-icon>
+              <span>首页</span>
+            </a-menu-item>
+            <a-menu-item key="jobs">
+              <a-icon type="project"></a-icon>
+              <span>测绘项目</span>
+            </a-menu-item>
+            <a-menu-item key="tasks">
+              <a-icon type="ordered-list"></a-icon>
+              <span>任务队列</span>
             </a-menu-item>
             {% if user.role == 'admin' %}
-            <a-menu-item key="logs">
-              <a-icon type="file-text"></a-icon>
-              <span>任务管理</span>
-            </a-menu-item>
             <a-menu-item key="users">
               <a-icon type="team"></a-icon>
               <span>用户管理</span>

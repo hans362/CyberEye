@@ -1,0 +1,210 @@
+{% extends "base.html" %} {% block title %}测绘项目{% endblock %} {% block
+menu_key %}jobs{% endblock %} {% block content %} {% raw %}
+<a-layout-content style="margin: 16px">
+  <a-card style="margin-bottom: 16px">
+    <div style="margin-bottom: 16px">
+      <a-button
+        type="primary"
+        @click="createJobVisible = true"
+        ><a-icon type="plus"></a-icon>创建项目</a-button
+      >
+    </div>
+    <a-table
+      :columns="columns"
+      :data-source="jobs"
+      :pagination="pagination"
+      @change="(pagination) => { this.pagination = pagination; this.fetchJobs(); }"
+    >
+      <template slot="domain" slot-scope="text, record">
+        <a @click="copyToClipboard(record.domain)">
+          <a-icon type="global"></a-icon> {{ record.domain }}
+        </a>
+      </template>
+      <template slot="status" slot-scope="text, record">
+        <div v-if="record.status === 'pending'" style="color: grey">
+          <a-icon type="clock-circle"></a-icon> 排队中
+        </div>
+        <div v-else-if="record.status === 'running'" style="color: #faad14">
+          <a-icon type="play-circle"></a-icon> 进行中
+        </div>
+        <div v-else-if="record.status === 'completed'" style="color: #52c41a">
+          <a-icon type="check-circle"></a-icon> 已完成
+        </div>
+        <div v-else-if="record.status === 'failed'" style="color: red">
+          <a-icon type="exclamation-circle"></a-icon> 任务失败
+        </div>
+      </template>
+      <template slot="operation" slot-scope="text, record">
+        <a-button type="link" @click="editJobVisible = true; jobForm = record"
+          ><a-icon type="edit"></a-icon>编辑</a-button
+        >
+        <a-button type="link" @click="deleteJob(record.id)" style="color: red"
+          ><a-icon type="delete"></a-icon>删除</a-button
+        >
+      </template>
+    </a-table>
+  </a-card>
+</a-layout-content>
+{% endraw %} {% endblock %} {% block modal %} {% raw %}
+<a-modal
+  :visible="createJobVisible"
+  title="创建项目"
+  @ok="createJob"
+  @cancel="createJobVisible = false"
+  :ok-text="'开始测绘'"
+  :cancel-text="'取消'"
+>
+  <a-form-item label="名称">
+    <a-input
+      v-model="jobForm.name"
+      placeholder="请输入项目名称"
+    ></a-input>
+  </a-form-item>
+  <a-form-item label="描述">
+    <a-textarea
+      v-model="jobForm.description"
+      placeholder="请输入项目描述"
+      :autosize="{ minRows: 5, maxRows: 5 }"
+    ></a-textarea>
+  </a-form-item>
+  <a-form-item label="目标域名">
+    <a-input
+      v-model="jobForm.domain"
+      placeholder="请输入目标域名"
+    ></a-input>
+  </a-form-item>
+</a-modal>
+<a-modal
+  :visible="editJobVisible"
+  title="编辑项目"
+  @ok="editJob"
+  @cancel="editJobVisible = false"
+  :ok-text="'保存'"
+  :cancel-text="'取消'"
+>
+  <a-form-item label="名称">
+    <a-input
+      v-model="jobForm.name"
+      placeholder="请输入项目名称"
+    ></a-input>
+  </a-form-item>
+  <a-form-item label="描述">
+    <a-textarea
+      v-model="jobForm.description"
+      placeholder="请输入项目描述"
+      :autosize="{ minRows: 5, maxRows: 5 }"
+    ></a-textarea>
+  </a-form-item>
+  <a-form-item label="目标域名">
+    <a-input
+      v-model="jobForm.domain"
+      placeholder="请输入目标域名"
+      disabled
+    ></a-input>
+  </a-form-item>
+</a-modal>
+{% endraw %} {% endblock %} {% block script %} {% raw %}
+<script>
+  new Vue({
+    el: "#app",
+    data() {
+      return {
+        jobs: [],
+        columns: [
+          { title: "名称", dataIndex: "name",},
+          { title: "目标域名", scopedSlots: { customRender: "domain" },},
+          { title: "测绘状态", scopedSlots: { customRender: "status" },},
+          { title: "创建时间", dataIndex: "created_at", customRender: (text) => {
+            return new Date(text).toLocaleString();
+          },},
+          { title: "更新时间", dataIndex: "updated_at", customRender: (text) => {
+            return new Date(text).toLocaleString();
+          },},
+          {
+            title: "操作",
+            scopedSlots: { customRender: "operation" },
+          },
+        ],
+        pagination: {
+          current: 1,
+          pageSize: 10,
+          total: 0,
+        },
+        createJobVisible: false,
+        editJobVisible: false,
+        jobForm: {
+          name: "",
+          description: "",
+          domain: "",
+        },
+        {% endraw %}{% include "data.js" %}{% raw %}
+      }
+    },
+    methods: {
+      fetchJobs() {
+        axios
+          .get("/api/jobs", {
+            params: {
+              offset: (this.pagination.current - 1) * this.pagination.pageSize,
+              limit: this.pagination.pageSize,
+            },
+          })
+          .then((res) => {
+            this.jobs = res.data.jobs;
+            this.pagination.total = res.data.total;
+          });
+      },
+      createJob() {
+        axios
+          .put("/api/jobs", this.jobForm)
+          .then((res) => {
+            if (res.data.message || res.data.detail) {
+              this.$message.error(res.data.message || res.data.detail);
+              return;
+            }
+            this.$message.success("项目创建成功");
+            this.createJobVisible = false;
+            this.fetchJobs();
+          })
+          .catch((err) => {
+            this.$message.error("项目创建失败");
+          });
+      },
+      editJob() {
+        axios
+          .post(`/api/jobs/${this.jobForm.id}`, this.jobForm)
+          .then((res) => {
+            if (res.data.message || res.data.detail) {
+              this.$message.error(res.data.message || res.data.detail);
+              return;
+            }
+            this.$message.success("项目编辑成功");
+            this.editJobVisible = false;
+            this.fetchJobs();
+          })
+          .catch((err) => {
+            this.$message.error("项目编辑失败");
+          });
+      },
+      deleteJob(id) {
+        this.$confirm({
+          title: "删除项目",
+          content: "确定删除该项目吗？",
+          okText: "确定",
+          okType: "danger",
+          cancelText: "取消",
+          onOk: () => {
+            axios.delete(`/api/jobs/${id}`).then(() => {
+              this.fetchJobs();
+            });
+          },
+        });
+      },
+      {% endraw %}{% include "methods.js" %}{% raw %}
+    },
+    mounted() {
+      this.fetchJobs();
+    },
+  });
+</script>
+{% endraw %} {% endblock %}

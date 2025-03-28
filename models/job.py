@@ -26,7 +26,7 @@ class JobCreate(SQLModel):
     name: str
     domain: str
     description: str
-    owner_id: uuid.UUID  # TODO: remove this field
+    owner_id: uuid.UUID | None = None
 
 
 class JobRead(SQLModel):
@@ -41,6 +41,11 @@ class JobRead(SQLModel):
     updated_at: datetime
 
 
+class JobsRead(SQLModel):
+    jobs: list[JobRead]
+    total: int
+
+
 class JobTaskRead(SQLModel):
     id: uuid.UUID
     name: str
@@ -49,3 +54,8 @@ class JobTaskRead(SQLModel):
     message: str
     created_at: datetime
     updated_at: datetime
+
+
+class JobTasksRead(SQLModel):
+    tasks: list[JobTaskRead]
+    total: int

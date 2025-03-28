@@ -10,34 +10,20 @@ handleLogout() {
     });
 },
 handleMenuClick({ key }) {
-  switch (key) {
-    case "files":
-      window.location.href = "/files";
-      break;
-    case "logs":
-      window.location.href = "/logs";
-      break;
-    case "users":
-      window.location.href = "/users";
-      break;
-  }
+  window.location.href = "/" + (key == "index" ? "" : key);
 },
 validatePassword(password) {
   if (!password) return false;
-  
   if (password.length < 12) {
     return '密码长度至少12位';
   }
-  
   const hasUpperCase = /[A-Z]/.test(password);
   const hasLowerCase = /[a-z]/.test(password);
   const hasNumbers = /\d/.test(password);
   const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/~`'"\\]/.test(password);
-  
   if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
     return '密码必须包含大小写字母、数字和特殊字符';
-  }
-  
+  } 
   return true;
 },
 showChangePasswordModal() {
@@ -53,37 +39,38 @@ handleChangePassword() {
     this.$message.error('请填写完整信息');
     return;
   }
-
   if (this.changePasswordForm.new_password !== this.changePasswordForm.confirm_password) {
     this.$message.error('两次输入的新密码不一致');
     return;
   }
-
   const passwordValidation = this.validatePassword(this.changePasswordForm.new_password);
   if (passwordValidation !== true) {
     this.$message.error(passwordValidation);
     return;
   }
-
-  const params = new URLSearchParams();
-  params.append('old_password', this.sm2Encrypt(this.changePasswordForm.old_password));
-  params.append('new_password', this.sm2Encrypt(this.changePasswordForm.new_password));
-
-  axios.patch('/api/user/password', params, {
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    }
+  axios.post('/api/users/me', {
+    old_password: this.changePasswordForm.old_password,
+    new_password: this.changePasswordForm.new_password,
   })
   .then(response => {
-    if (response.data.status === 'success') {
-      this.$message.success('密码修改成功');
-      this.changePasswordVisible = false;
-    } else {
-      this.$message.error(response.data.message);
+    if (response.data.message || response.data.detail) {
+      this.$message.error(response.data.message || response.data.detail);
+      return;
     }
+    this.$message.success('密码修改成功');
+    this.changePasswordVisible = false;
   })
   .catch(() => {
     this.$message.error('密码修改失败');
   });
+},
+copyToClipboard(text) {
+  const input = document.createElement('input');
+  input.value = text;
+  document.body.appendChild(input);
+  input.select();
+  document.execCommand('copy');
+  document.body.removeChild(input);
+  this.$message.success('已复制到剪贴板');
 },
 {% endraw %}

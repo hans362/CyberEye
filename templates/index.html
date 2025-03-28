@@ -1,6 +1,10 @@
 {% extends "base.html" %} {% block title %}首页{% endblock %} {% block menu_key
 %}index{% endblock %} {% block content %} {% raw %}
-<a-layout-content style="margin: 16px"> </a-layout-content>
+<a-layout-content style="margin: 16px">
+  <a-card title="欢迎" style="margin-bottom: 16px">
+    <p>欢迎使用 CyberEye 网络空间测绘系统</p>
+  </a-card>
+</a-layout-content>
 {% endraw %} {% endblock %} {% block script %} {% raw %}
 <script>
   new Vue({

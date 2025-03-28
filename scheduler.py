@@ -4,9 +4,7 @@ from time import sleep
 from sqlmodel import select, update
 
 from db import Session, engine
-from models.job import Job
-from models.report import IPAddr, Service, SubDomain, SubDomainIPAddr
-from models.task import Task
+from models import *
 
 SCHEDULER_INTERVAL = 5
 
