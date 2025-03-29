@@ -14,7 +14,9 @@ menu_key %}tasks{% endblock %} {% block content %} {% raw %}
       @change="(pagination) => { this.pagination = pagination; this.fetchTasks(); }"
     >
       <template slot="name" slot-scope="text, record">
-        <a @click="taskDetail = Object.assign({}, record); taskDetailVisible = true">
+        <a
+          @click="taskDetail = Object.assign({}, record); taskDetailVisible = true"
+        >
           {{ record.name }}
         </a>
       </template>
@@ -33,7 +35,9 @@ menu_key %}tasks{% endblock %} {% block content %} {% raw %}
         </div>
       </template>
       <template slot="job" slot-scope="text, record">
-        <a @click="window.location.href = `/job/${record.job.id}`"> {{ record.job.name }} </a>
+        <a @click="window.location.href = `/job/${record.job.id}`">
+          {{ record.job.name }}
+        </a>
       </template>
       <template slot="operation" slot-scope="text, record">
         <a-button
@@ -45,68 +49,8 @@ menu_key %}tasks{% endblock %} {% block content %} {% raw %}
     </a-table>
   </a-card>
 </a-layout-content>
-<a-modal :visible="taskDetailVisible" title="任务详情" width="80%" @cancel="taskDetailVisible = false">
-  <a-descriptions bordered>
-    <a-descriptions-item label="任务ID">
-      {{ taskDetail.id }}
-    </a-descriptions-item>
-    <a-descriptions-item label="任务名称">
-      {{ taskDetail.name }}
-    </a-descriptions-item>
-    <a-descriptions-item label="任务状态">
-      <a-tag v-if="taskDetail.status === 'pending'" color="grey">
-        排队中
-      </a-tag>
-      <a-tag v-else-if="taskDetail.status === 'running'" color="orange">
-        进行中
-      </a-tag>
-      <a-tag v-else-if="taskDetail.status === 'completed'" color="green">
-        已完成
-      </a-tag>
-      <a-tag v-else-if="taskDetail.status === 'failed'" color="red">
-        失败
-      </a-tag>
-    </a-descriptions-item>
-    <a-descriptions-item label="测绘项目">
-      <a @click="window.location.href = `/job/${taskDetail.job.id}`">{{ taskDetail.job.name }}</a>
-    </a-descriptions-item>
-    <a-descriptions-item label="任务创建时间">
-      {{ new Date(taskDetail.created_at).toLocaleString() }}
-    </a-descriptions-item>
-    <a-descriptions-item label="任务更新时间">
-      {{ new Date(taskDetail.updated_at).toLocaleString() }}
-    </a-descriptions-item>
-    <a-descriptions-item label="调用模块", span="3">
-      {{ taskDetail.method_name }}
-    </a-descriptions-item>
-    <a-descriptions-item label="错误日志" span="3">
-      <a-textarea
-        v-model="taskDetail.message"
-        :autosize="{ minRows: 3, maxRows: 3 }"
-        readonly
-      ></a-textarea>
-    </a-descriptions-item>
-    <a-descriptions-item label="模块输入" span="3">
-      <a-textarea
-        v-model="taskDetail.input"
-        :autosize="{ minRows: 3, maxRows: 3 }"
-        readonly
-      ></a-textarea>
-    </a-descriptions-item>
-    <a-descriptions-item label="模块输出" span="3">
-      <a-textarea
-        v-model="taskDetail.output"
-        :autosize="{ minRows: 3, maxRows: 3 }"
-        readonly
-      ></a-textarea>
-    </a-descriptions-item>
-  </a-descriptions>
-  <template slot="footer">
-    <a-button @click="taskDetailVisible = false">关闭</a-button>
-  </template>
-</a-modal>
-{% endraw %} {% endblock %} {% block modal %} {% raw %} {% endraw %} {% endblock
-%} {% block script %} {% raw %}
+{% endraw %} {% endblock %} {% block modal %} {% include "task.html" %} {%
+endblock %} {% block script %} {% raw %}
 <script>
   new Vue({
     el: "#app",

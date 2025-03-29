@@ -5,7 +5,8 @@ from sqlmodel import func, select
 
 from db import SessionDep
 from models.error import Error
-from models.job import Job, JobCreate, JobRead, JobsRead, JobTasksRead
+from models.job import Job, JobCreate, JobDomainsRead, JobRead, JobsRead, JobTasksRead
+from models.report import IPAddr, SubDomain, SubDomainIPAddr
 from models.task import Task
 from models.user import User
 
@@ -129,5 +130,40 @@ def read_job_tasks(
             select(Task).where(Task.job_id == job_id).order_by(Task.created_at.desc())
         ).all()
         return JobTasksRead(tasks=tasks, total=len(tasks))
+    except Exception as e:
+        return Error(message=str(e))
+
+
+@router.get("/{job_id}/domains", dependencies=[Depends(User.is_authenticated)])
+def read_job_domains(
+    request: Request, job_id: uuid.UUID, session: SessionDep
+) -> JobDomainsRead | Error:
+    try:
+        q = select(Job).where(Job.id == job_id)
+        try:
+            User.is_admin(request, session)
+        except Exception:
+            q = q.where(Job.owner_id == uuid.UUID(request.session.get("uid")))
+        job = session.exec(q).first()
+        if not job:
+            return Error(message="测绘项目不存在")
+        results = session.exec(
+            select(SubDomain.domain, IPAddr.ip)
+            .where(SubDomain.job_id == job_id)
+            .where(SubDomain.id == SubDomainIPAddr.subdomain_id)
+            .where(IPAddr.id == SubDomainIPAddr.ip_id)
+            .order_by(SubDomain.domain)
+            .distinct()
+        ).all()
+        domains = {}
+        for domain, ip in results:
+            if domain not in domains:
+                domains[domain] = [ip]
+            else:
+                domains[domain].append(ip)
+        return JobDomainsRead(
+            domains=[{"domain": domain, "ips": domains[domain]} for domain in domains],
+            total=len(domains),
+        )
     except Exception as e:
         return Error(message=str(e))

@@ -59,3 +59,13 @@ class JobTaskRead(SQLModel):
 class JobTasksRead(SQLModel):
     tasks: list[JobTaskRead]
     total: int
+
+
+class JobDomainRead(SQLModel):
+    domain: str
+    ips: list[str]
+
+
+class JobDomainsRead(SQLModel):
+    domains: list[JobDomainRead]
+    total: int

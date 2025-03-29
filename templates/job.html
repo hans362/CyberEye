@@ -2,18 +2,162 @@
 menu_key %}jobs{% endblock %} {% block content %} {% raw %}
 <a-layout-content style="margin: 16px">
   <a-card style="margin-bottom: 16px" :title="job.name || ''">
-    <div style="margin-bottom: 16px">
+    <div style="margin-bottom: 32px">
+      <a-descriptions bordered style="margin-bottom: 16px">
+        <a-descriptions-item label="项目ID"> {{ job.id }} </a-descriptions-item>
+        <a-descriptions-item label="项目名称">
+          {{ job.name }}
+        </a-descriptions-item>
+        <a-descriptions-item label="目标域名">
+          <a @click="copyToClipboard(job.domain)">
+            <a-icon type="global"></a-icon> {{ job.domain }}
+          </a>
+        </a-descriptions-item>
+        <a-descriptions-item label="项目描述" span="3">
+          {{ job.description }}
+        </a-descriptions-item>
+        <a-descriptions-item label="测绘状态">
+          <a-tag v-if="job.status === 'pending'" color="grey"> 排队中 </a-tag>
+          <a-tag v-else-if="job.status === 'running'" color="orange">
+            进行中
+          </a-tag>
+          <a-tag v-else-if="job.status === 'completed'" color="green">
+            已完成
+          </a-tag>
+          <a-tag v-else-if="job.status === 'failed'" color="red"> 失败 </a-tag>
+        </a-descriptions-item>
+        <a-descriptions-item label="项目创建时间">
+          {{ new Date(job.created_at).toLocaleString() }}
+        </a-descriptions-item>
+        <a-descriptions-item label="项目更新时间">
+          {{ new Date(job.updated_at).toLocaleString() }}
+        </a-descriptions-item>
+        <a-descriptions-item
+          label="失败原因"
+          span="3"
+          v-if="job.status === 'failed'"
+        >
+          {{ job.message }}
+        </a-descriptions-item>
+      </a-descriptions>
+    </div>
+    <div style="margin-bottom: 32px">
       <a-steps :current="currentStep" :status="currentStepStatus">
-        <a-step v-for="step in steps" :key="step.method_name">
+        <a-step
+          v-for="step in steps"
+          :key="step.method_name"
+          :sub-title="step.time ? '已进行 ' + step.time : ''"
+        >
           <template slot="title"> {{ step.name }} </template>
           <span slot="description"> {{ step.description }} </span>
         </a-step>
       </a-steps>
     </div>
+    <a-tabs default-active-key="1" @change="handleTabChange">
+      <a-tab-pane key="1">
+        <span slot="tab">
+          <a-icon type="ordered-list"></a-icon>
+          测绘任务
+        </span>
+        <div>
+          <a-collapse v-model="activeKey">
+            <a-collapse-panel
+              v-for="step in steps.slice(0,-1)"
+              :key="step.method_name"
+              :header="step.name"
+              :disabled="steps.findIndex(s => s.method_name === step.method_name) > currentStep"
+            >
+              <a-table
+                :columns="tasksColumns"
+                :data-source="tasks.filter(task => task.method_name === step.method_name)"
+                :pagination="false"
+              >
+                <template slot="name" slot-scope="text, record">
+                  <a @click="fetchTask(record.id); taskDetailVisible = true">
+                    {{ record.name }}
+                  </a>
+                </template>
+                <template slot="status" slot-scope="text, record">
+                  <div v-if="record.status === 'pending'" style="color: grey">
+                    <a-icon type="clock-circle"></a-icon> 排队中
+                  </div>
+                  <div
+                    v-else-if="record.status === 'running'"
+                    style="color: #faad14"
+                  >
+                    <a-icon type="play-circle"></a-icon> 进行中
+                  </div>
+                  <div
+                    v-else-if="record.status === 'completed'"
+                    style="color: #52c41a"
+                  >
+                    <a-icon type="check-circle"></a-icon> 已完成
+                  </div>
+                  <div
+                    v-else-if="record.status === 'failed'"
+                    style="color: red"
+                  >
+                    <a-icon type="exclamation-circle"></a-icon> 失败
+                  </div>
+                </template>
+                <template slot="operation" slot-scope="text, record">
+                  <a-button
+                    type="link"
+                    @click="fetchTask(record.id); taskDetailVisible = true"
+                    ><a-icon type="eye"></a-icon>详情</a-button
+                  >
+                </template>
+              </a-table>
+            </a-collapse-panel>
+          </a-collapse>
+        </div>
+      </a-tab-pane>
+      <a-tab-pane key="2">
+        <span slot="tab">
+          <a-icon type="global"></a-icon>
+          域名资产
+        </span>
+        <a-table
+          :columns="domainsColumns"
+          :data-source="domains"
+          :pagination="false"
+        >
+          <template slot="domain" slot-scope="text, record">
+            <a @click="copyToClipboard(record.domain)">
+              <a-icon type="global"></a-icon> {{ record.domain }}
+            </a>
+          </template>
+          <template slot="ip" slot-scope="text, record">
+            <a-tag
+              v-for="ip in record.ips"
+              :key="ip"
+              color="green"
+              @click="copyToClipboard(ip)"
+              style="cursor: pointer"
+            >
+              {{ ip }}
+            </a-tag>
+          </template>
+        </a-table>
+      </a-tab-pane>
+      <a-tab-pane key="3">
+        <span slot="tab">
+          <a-icon type="api"></a-icon>
+          IP 资产
+        </span>
+      </a-tab-pane>
+      <a-tab-pane key="4">
+        <span slot="tab">
+          <a-icon type="database"></a-icon>
+          服务资产
+        </span>
+        Tab 3
+      </a-tab-pane>
+    </a-tabs>
   </a-card>
 </a-layout-content>
-{% endraw %} {% endblock %} {% block modal %} {% raw %} {% endraw %} {% endblock
-%} {% block script %} {% raw %}
+{% endraw %} {% endblock %} {% block modal %} 111{% include "task.html" %} {%
+endblock %} {% block script %} {% raw %}
 <script>
   new Vue({
     el: "#app",
@@ -46,9 +190,39 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
             description: '扫描主机的已知服务',
             time: null,
           },
+          {
+            method_name: 'complete',
+            name: '完成测绘',
+            description: '整理生成测绘结果',
+            time: null,
+          },
         ],
         currentStep: 0,
         currentStepStatus: 'wait',
+        activeKey: [],
+        tasksColumns: [
+          { title: "名称", scopedSlots: { customRender: "name" },},
+          { title: "状态", scopedSlots: { customRender: "status" },},
+          { title: "创建时间", dataIndex: "created_at", customRender: (text) => {
+            return new Date(text).toLocaleString();
+          },},
+          { title: "更新时间", dataIndex: "updated_at", customRender: (text) => {
+            return new Date(text).toLocaleString();
+          },},
+          {
+            title: "操作",
+            scopedSlots: { customRender: "operation" },
+          },
+        ],
+        taskDetailVisible: false,
+        taskDetail: {job: {}},
+        domains: [],
+        domainsColumns: [
+          { title: "域名", scopedSlots: { customRender: "domain" },},
+          { title: "IP 地址", scopedSlots: { customRender: "ip" },},
+        ],
+        ips: [],
+        services: [],
         {% endraw %}{% include "data.js" %}{% raw %}
       }
     },
@@ -71,20 +245,75 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
           .get(`/api/jobs/${jobId}/tasks`)
           .then((res) => {
             this.tasks = res.data.tasks;
+            this.steps.forEach((step) => {
+              step.time = null;
+            });
             if (this.tasks.length > 0) {
               this.currentStep = this.steps.findIndex(
                 (step) => step.method_name === this.tasks[0].method_name
               );
-              if (this.tasks.every((task) => task.status === "completed")) {
-                this.currentStepStatus = "finish";
-              } else if (this.tasks.some((task) => task.status === "running")) {
-                this.currentStepStatus = "process";
-              } else if (this.tasks.some((task) => task.status === "failed")) {
-                this.currentStepStatus = "error";
+              const stepTasks = this.tasks.filter(
+                (task) => task.method_name === this.steps[this.currentStep].method_name
+              );
+              if (stepTasks.some(task => task.status === 'failed')) {
+                this.currentStepStatus = 'error';
+              } else if (stepTasks.every(task => task.status === 'completed')) {
+                this.currentStepStatus = 'finish';
               } else {
-                this.currentStepStatus = "wait";
+                this.currentStepStatus = 'process';
+                this.steps[this.currentStep].time = this.diffTime(
+                  new Date(this.tasks[0].created_at),
+                  new Date()
+                );
               }
             }
+            if (this.job.status === 'completed') {
+              this.currentStep = this.steps.length;
+              this.currentStepStatus = 'finish';
+            }
+          });
+      },
+      fetchTask(taskId) {
+        axios
+          .get(`/api/tasks/${taskId}`)
+          .then((res) => {
+            this.taskDetail = res.data;
+          });
+      },
+      handleTabChange(tab) {
+        if (tab === '1') {
+          this.fetchJobTasks();
+        }
+        else if (tab === '2') {
+          this.fetchJobDomains();
+        } else if (tab === '3') {
+          this.fetchJobIPs();
+        } else if (tab === '4') {
+          this.fetchJobServices();
+        }
+      },
+      fetchJobDomains() {
+        const jobId = window.location.pathname.split("/").pop();
+        axios
+          .get(`/api/jobs/${jobId}/domains`)
+          .then((res) => {
+            this.domains = res.data.domains;
+          });
+      },
+      fetchJobIPs() {
+        const jobId = window.location.pathname.split("/").pop();
+        axios
+          .get(`/api/jobs/${jobId}/ips`)
+          .then((res) => {
+            this.ips = res.data.ips;
+          });
+      },
+      fetchJobServices() {
+        const jobId = window.location.pathname.split("/").pop();
+        axios
+          .get(`/api/jobs/${jobId}/services`)
+          .then((res) => {
+            this.services = res.data.services;
           });
       },
       {% endraw %}{% include "methods.js" %}{% raw %}
@@ -92,6 +321,10 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
     mounted() {
       this.fetchJob();
       this.fetchJobTasks();
+      setInterval(() => {
+        this.fetchJob();
+        this.fetchJobTasks();
+      }, 5000);
     },
   });
 </script>
