@@ -49,7 +49,6 @@ class User(UserBase, table=True):
             .role
             != "admin"
         ):
-            request.session.clear()
             raise HTTPException(status_code=401, detail="Unauthenticated")
         return session.exec(
             select(User).where(User.id == uuid.UUID(request.session.get("uid")))
@@ -62,6 +61,11 @@ class UserRead(SQLModel):
     role: str
     created_at: datetime
     updated_at: datetime
+
+
+class UsersRead(SQLModel):
+    users: list[UserRead]
+    total: int
 
 
 class UserCreate(SQLModel):

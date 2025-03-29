@@ -1,0 +1,195 @@
+{% extends "base.html" %} {% block title %}用户管理{% endblock %} {% block
+menu_key %}users{% endblock %} {% block content %} {% raw %}
+<a-layout-content style="margin: 16px">
+  <a-card style="margin-bottom: 16px">
+    <div style="margin-bottom: 16px">
+      <a-button type="primary" @click="createUserVisible = true; userForm = {}"
+        ><a-icon type="user-add"></a-icon>创建用户</a-button
+      >
+    </div>
+    <a-table
+      :columns="columns"
+      :data-source="users"
+      :pagination="pagination"
+      @change="(pagination) => { this.pagination = pagination; this.fetchUsers(); }"
+    >
+      <template slot="operation" slot-scope="text, record">
+        <a-button
+          type="link"
+          @click="editUserVisible = true; userForm = Object.assign({}, record)"
+          ><a-icon type="edit"></a-icon>编辑</a-button
+        >
+        <a-button type="link" @click="deleteUser(record.id)" style="color: red"
+          ><a-icon type="delete"></a-icon>删除</a-button
+        >
+      </template>
+    </a-table>
+  </a-card>
+</a-layout-content>
+{% endraw %} {% endblock %} {% block modal %} {% raw %}
+<a-modal
+  :visible="createUserVisible"
+  title="创建用户"
+  @ok="createUser"
+  @cancel="createUserVisible = false"
+  :ok-text="'创建'"
+  :cancel-text="'取消'"
+>
+  <a-form-item label="用户名">
+    <a-input v-model="userForm.username" placeholder="请输入用户名"></a-input>
+  </a-form-item>
+  <a-form-item label="密码">
+    <a-input
+      v-model="userForm.password"
+      placeholder="请输入密码"
+      type="password"
+    ></a-input>
+    <div style="color: #999; font-size: 12px; margin-top: 4px">
+      密码要求：长度至少12位，必须包含大小写字母、数字和特殊字符
+    </div>
+  </a-form-item>
+  <a-form-item label="角色">
+    <a-radio-group v-model="userForm.role">
+      <a-radio value="admin">管理员</a-radio>
+      <a-radio value="user">普通用户</a-radio>
+    </a-radio-group>
+  </a-form-item>
+</a-modal>
+<a-modal
+  :visible="editUserVisible"
+  title="编辑用户"
+  @ok="editUser"
+  @cancel="editUserVisible = false"
+  :ok-text="'保存'"
+  :cancel-text="'取消'"
+>
+  <a-form-item label="用户名">
+    <a-input v-model="userForm.username" placeholder="请输入用户名"></a-input>
+  </a-form-item>
+  <a-form-item label="密码">
+    <a-input
+      v-model="userForm.password"
+      placeholder="不修改请留空"
+      type="password"
+    ></a-input>
+    <div style="color: #999; font-size: 12px; margin-top: 4px">
+      密码要求：长度至少12位，必须包含大小写字母、数字和特殊字符
+    </div>
+  </a-form-item>
+  <a-form-item label="角色">
+    <a-radio-group v-model="userForm.role">
+      <a-radio value="admin">管理员</a-radio>
+      <a-radio value="user">普通用户</a-radio>
+    </a-radio-group>
+  </a-form-item>
+</a-modal>
+{% endraw %} {% endblock %} {% block script %} {% raw %}
+<script>
+  new Vue({
+    el: "#app",
+    data() {
+      return {
+        users: [],
+        columns: [
+          { title: "用户名", dataIndex: "username",},
+          { title: "角色", dataIndex: "role", customRender: (text) => {
+            return text === "admin" ? "管理员" : "普通用户";
+          },},
+          { title: "创建时间", dataIndex: "created_at", customRender: (text) => {
+            return new Date(text).toLocaleString();
+          },},
+          { title: "更新时间", dataIndex: "updated_at", customRender: (text) => {
+            return new Date(text).toLocaleString();
+          },},
+          {
+            title: "操作",
+            scopedSlots: { customRender: "operation" },
+          },
+        ],
+        pagination: {
+          current: 1,
+          pageSize: 10,
+          total: 0,
+        },
+        createUserVisible: false,
+        editUserVisible: false,
+        userForm: {
+          username: "",
+          password: "",
+          role: "",
+        },
+        {% endraw %}{% include "data.js" %}{% raw %}
+      }
+    },
+    methods: {
+      fetchUsers() {
+        axios
+          .get("/api/users", {
+            params: {
+              offset: (this.pagination.current - 1) * this.pagination.pageSize,
+              limit: this.pagination.pageSize,
+            },
+          })
+          .then((res) => {
+            this.users = res.data.users;
+            this.pagination.total = res.data.total;
+          });
+      },
+      createUser() {
+        axios
+          .put("/api/users", this.userForm)
+          .then((res) => {
+            if (res.data.message || res.data.detail) {
+              this.$message.error(res.data.message || res.data.detail);
+              return;
+            }
+            this.$message.success("用户创建成功");
+            this.createUserVisible = false;
+            this.fetchUsers();
+          })
+          .catch((err) => {
+            this.$message.error("用户创建失败");
+          });
+      },
+      editUser() {
+        if (this.userForm.password && this.validatePassword(this.userForm.password) !== true) {
+          this.$message.error(this.validatePassword(this.userForm.password));
+          return;
+        }
+        axios
+          .patch(`/api/users/${this.userForm.id}`, this.userForm)
+          .then((res) => {
+            if (res.data.message || res.data.detail) {
+              this.$message.error(res.data.message || res.data.detail);
+              return;
+            }
+            this.$message.success("用户编辑成功");
+            this.editUserVisible = false;
+            this.fetchUsers();
+          })
+          .catch((err) => {
+            this.$message.error("用户编辑失败");
+          });
+      },
+      deleteUser(id) {
+        this.$confirm({
+          title: "删除用户",
+          content: "确定删除该用户吗？",
+          okText: "确定",
+          okType: "danger",
+          cancelText: "取消",
+          onOk: () => {
+            axios.delete(`/api/users/${id}`).then(() => {
+              this.fetchUsers();
+            });
+          },
+        });
+      },
+      {% endraw %}{% include "methods.js" %}{% raw %}
+    },
+    mounted() {
+      this.fetchUsers();
+    },
+  });
+</script>
+{% endraw %} {% endblock %}

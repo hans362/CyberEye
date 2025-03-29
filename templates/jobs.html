@@ -3,10 +3,11 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
 <a-layout-content style="margin: 16px">
   <a-card style="margin-bottom: 16px">
     <div style="margin-bottom: 16px">
-      <a-button
-        type="primary"
-        @click="createJobVisible = true"
+      <a-button type="primary" @click="createJobVisible = true; jobForm = {}"
         ><a-icon type="plus"></a-icon>创建项目</a-button
+      >
+      <a-button type="default" @click="fetchJobs" style="float: right"
+        ><a-icon type="reload"></a-icon>刷新</a-button
       >
     </div>
     <a-table
@@ -15,6 +16,9 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
       :pagination="pagination"
       @change="(pagination) => { this.pagination = pagination; this.fetchJobs(); }"
     >
+      <template slot="name" slot-scope="text, record">
+        <a @click="window.location.href = `/job/${record.id}`"> {{ record.name }} </a>
+      </template>
       <template slot="domain" slot-scope="text, record">
         <a @click="copyToClipboard(record.domain)">
           <a-icon type="global"></a-icon> {{ record.domain }}
@@ -35,7 +39,12 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
         </div>
       </template>
       <template slot="operation" slot-scope="text, record">
-        <a-button type="link" @click="editJobVisible = true; jobForm = record"
+        <a-button type="link" @click="window.location.href = `/job/${record.id}`"
+          ><a-icon type="eye"></a-icon>详情</a-button
+        >
+        <a-button
+          type="link"
+          @click="editJobVisible = true; jobForm = Object.assign({}, record)"
           ><a-icon type="edit"></a-icon>编辑</a-button
         >
         <a-button type="link" @click="deleteJob(record.id)" style="color: red"
@@ -55,10 +64,7 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
   :cancel-text="'取消'"
 >
   <a-form-item label="名称">
-    <a-input
-      v-model="jobForm.name"
-      placeholder="请输入项目名称"
-    ></a-input>
+    <a-input v-model="jobForm.name" placeholder="请输入项目名称"></a-input>
   </a-form-item>
   <a-form-item label="描述">
     <a-textarea
@@ -68,9 +74,8 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
     ></a-textarea>
   </a-form-item>
   <a-form-item label="目标域名">
-    <a-input
-      v-model="jobForm.domain"
-      placeholder="请输入目标域名"
+    <a-input v-model="jobForm.domain" placeholder="请输入目标域名"
+      ><a-icon slot="prefix" type="global"></a-icon
     ></a-input>
   </a-form-item>
 </a-modal>
@@ -83,10 +88,7 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
   :cancel-text="'取消'"
 >
   <a-form-item label="名称">
-    <a-input
-      v-model="jobForm.name"
-      placeholder="请输入项目名称"
-    ></a-input>
+    <a-input v-model="jobForm.name" placeholder="请输入项目名称"></a-input>
   </a-form-item>
   <a-form-item label="描述">
     <a-textarea
@@ -96,10 +98,8 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
     ></a-textarea>
   </a-form-item>
   <a-form-item label="目标域名">
-    <a-input
-      v-model="jobForm.domain"
-      placeholder="请输入目标域名"
-      disabled
+    <a-input v-model="jobForm.domain" placeholder="请输入目标域名" disabled
+      ><a-icon slot="prefix" type="global"></a-icon
     ></a-input>
   </a-form-item>
 </a-modal>
@@ -111,7 +111,7 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
       return {
         jobs: [],
         columns: [
-          { title: "名称", dataIndex: "name",},
+          { title: "名称", scopedSlots: { customRender: "name" },},
           { title: "目标域名", scopedSlots: { customRender: "domain" },},
           { title: "测绘状态", scopedSlots: { customRender: "status" },},
           { title: "创建时间", dataIndex: "created_at", customRender: (text) => {
@@ -158,13 +158,13 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
         axios
           .put("/api/jobs", this.jobForm)
           .then((res) => {
-            if (res.data.message || res.data.detail) {
+            if (!res.data.id) {
               this.$message.error(res.data.message || res.data.detail);
               return;
             }
             this.$message.success("项目创建成功");
             this.createJobVisible = false;
-            this.fetchJobs();
+            window.location.href = `/job/${res.data.id}`;
           })
           .catch((err) => {
             this.$message.error("项目创建失败");
@@ -172,9 +172,9 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
       },
       editJob() {
         axios
-          .post(`/api/jobs/${this.jobForm.id}`, this.jobForm)
+          .patch(`/api/jobs/${this.jobForm.id}`, this.jobForm)
           .then((res) => {
-            if (res.data.message || res.data.detail) {
+            if (!res.data.id) {
               this.$message.error(res.data.message || res.data.detail);
               return;
             }

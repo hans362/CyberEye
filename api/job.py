@@ -20,13 +20,15 @@ def read_jobs(
     limit: int = 100,
 ) -> JobsRead:
     q = select(Job)
+    q_total = select(func.count(Job.id))
     try:
         User.is_admin(request, session)
     except Exception:
         q = q.where(Job.owner_id == uuid.UUID(request.session.get("uid")))
+        q_total = q_total.where(Job.owner_id == uuid.UUID(request.session.get("uid")))
     q = q.order_by(Job.created_at.desc()).offset(offset).limit(limit)
     jobs = session.exec(q).all()
-    total = session.exec(select(func.count(Job.id))).one()
+    total = session.exec(q_total).one()
     return JobsRead(jobs=jobs, total=total)
 
 
@@ -123,10 +125,9 @@ def read_job_tasks(
         job = session.exec(q).first()
         if not job:
             return Error(message="测绘项目不存在")
-        tasks = session.exec(select(Task).where(Task.job_id == job_id)).all()
-        total = session.exec(
-            select(func.count(Task.id)).where(Task.job_id == job_id)
-        ).one()
-        return JobTasksRead(tasks=tasks, total=total)
+        tasks = session.exec(
+            select(Task).where(Task.job_id == job_id).order_by(Task.created_at.desc())
+        ).all()
+        return JobTasksRead(tasks=tasks, total=len(tasks))
     except Exception as e:
         return Error(message=str(e))

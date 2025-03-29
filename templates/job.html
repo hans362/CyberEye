@@ -1,0 +1,98 @@
+{% extends "base.html" %} {% block title %}测绘项目{% endblock %} {% block
+menu_key %}jobs{% endblock %} {% block content %} {% raw %}
+<a-layout-content style="margin: 16px">
+  <a-card style="margin-bottom: 16px" :title="job.name || ''">
+    <div style="margin-bottom: 16px">
+      <a-steps :current="currentStep" :status="currentStepStatus">
+        <a-step v-for="step in steps" :key="step.method_name">
+          <template slot="title"> {{ step.name }} </template>
+          <span slot="description"> {{ step.description }} </span>
+        </a-step>
+      </a-steps>
+    </div>
+  </a-card>
+</a-layout-content>
+{% endraw %} {% endblock %} {% block modal %} {% raw %} {% endraw %} {% endblock
+%} {% block script %} {% raw %}
+<script>
+  new Vue({
+    el: "#app",
+    data() {
+      return {
+        job: {},
+        tasks: [],
+        steps: [
+          {
+            method_name: 'subdomain_collect',
+            name: '子域名收集',
+            description: '收集目标子域名信息',
+            time: null,
+          },
+          {
+            method_name: 'ip_resolve',
+            name: 'IP 地址解析',
+            description: '解析子域名 IP 地址',
+            time: null,
+          },
+          {
+            method_name: 'port_scan',
+            name: '端口扫描',
+            description: '扫描主机的开放端口',
+            time: null,
+          },
+          {
+            method_name: 'service_scan',
+            name: '服务扫描',
+            description: '扫描主机的已知服务',
+            time: null,
+          },
+        ],
+        currentStep: 0,
+        currentStepStatus: 'wait',
+        {% endraw %}{% include "data.js" %}{% raw %}
+      }
+    },
+    methods: {
+      fetchJob() {
+        const jobId = window.location.pathname.split("/").pop();
+        axios
+          .get(`/api/jobs/${jobId}`)
+          .then((res) => {
+            if (!res.data.id) {
+              window.location.href = "/jobs";
+              return;
+            }
+            this.job = res.data;
+          });
+      },
+      fetchJobTasks() {
+        const jobId = window.location.pathname.split("/").pop();
+        axios
+          .get(`/api/jobs/${jobId}/tasks`)
+          .then((res) => {
+            this.tasks = res.data.tasks;
+            if (this.tasks.length > 0) {
+              this.currentStep = this.steps.findIndex(
+                (step) => step.method_name === this.tasks[0].method_name
+              );
+              if (this.tasks.every((task) => task.status === "completed")) {
+                this.currentStepStatus = "finish";
+              } else if (this.tasks.some((task) => task.status === "running")) {
+                this.currentStepStatus = "process";
+              } else if (this.tasks.some((task) => task.status === "failed")) {
+                this.currentStepStatus = "error";
+              } else {
+                this.currentStepStatus = "wait";
+              }
+            }
+          });
+      },
+      {% endraw %}{% include "methods.js" %}{% raw %}
+    },
+    mounted() {
+      this.fetchJob();
+      this.fetchJobTasks();
+    },
+  });
+</script>
+{% endraw %} {% endblock %}

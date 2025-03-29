@@ -70,3 +70,36 @@ def jobs(request: Request, session: SessionDep):
         )
     except Exception:
         return RedirectResponse("/login")
+
+
+@app.get("/job/{job_id}")
+def job(request: Request, job_id: str, session: SessionDep):
+    try:
+        user = User.is_authenticated(request, session)
+        return templates.TemplateResponse(
+            "job.html", {"request": request, "user": user, "job_id": job_id}
+        )
+    except Exception:
+        return RedirectResponse("/login")
+
+
+@app.get("/tasks")
+def tasks(request: Request, session: SessionDep):
+    try:
+        user = User.is_authenticated(request, session)
+        return templates.TemplateResponse(
+            "tasks.html", {"request": request, "user": user}
+        )
+    except Exception:
+        return RedirectResponse("/login")
+
+
+@app.get("/users")
+def users(request: Request, session: SessionDep):
+    try:
+        user = User.is_authenticated(request, session)
+        return templates.TemplateResponse(
+            "users.html", {"request": request, "user": user}
+        )
+    except Exception:
+        return RedirectResponse("/login")

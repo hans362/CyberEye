@@ -1,0 +1,162 @@
+{% extends "base.html" %} {% block title %}任务队列{% endblock %} {% block
+menu_key %}tasks{% endblock %} {% block content %} {% raw %}
+<a-layout-content style="margin: 16px">
+  <a-card style="margin-bottom: 16px">
+    <div style="margin-bottom: 16px">
+      <a-button type="default" @click="fetchTasks"
+        ><a-icon type="reload"></a-icon>刷新</a-button
+      >
+    </div>
+    <a-table
+      :columns="columns"
+      :data-source="tasks"
+      :pagination="pagination"
+      @change="(pagination) => { this.pagination = pagination; this.fetchTasks(); }"
+    >
+      <template slot="name" slot-scope="text, record">
+        <a @click="taskDetail = Object.assign({}, record); taskDetailVisible = true">
+          {{ record.name }}
+        </a>
+      </template>
+      <template slot="status" slot-scope="text, record">
+        <div v-if="record.status === 'pending'" style="color: grey">
+          <a-icon type="clock-circle"></a-icon> 排队中
+        </div>
+        <div v-else-if="record.status === 'running'" style="color: #faad14">
+          <a-icon type="play-circle"></a-icon> 进行中
+        </div>
+        <div v-else-if="record.status === 'completed'" style="color: #52c41a">
+          <a-icon type="check-circle"></a-icon> 已完成
+        </div>
+        <div v-else-if="record.status === 'failed'" style="color: red">
+          <a-icon type="exclamation-circle"></a-icon> 失败
+        </div>
+      </template>
+      <template slot="job" slot-scope="text, record">
+        <a @click="window.location.href = `/job/${record.job.id}`"> {{ record.job.name }} </a>
+      </template>
+      <template slot="operation" slot-scope="text, record">
+        <a-button
+          type="link"
+          @click="taskDetail = Object.assign({}, record); taskDetailVisible = true"
+          ><a-icon type="eye"></a-icon>详情</a-button
+        >
+      </template>
+    </a-table>
+  </a-card>
+</a-layout-content>
+<a-modal :visible="taskDetailVisible" title="任务详情" width="80%" @cancel="taskDetailVisible = false">
+  <a-descriptions bordered>
+    <a-descriptions-item label="任务ID">
+      {{ taskDetail.id }}
+    </a-descriptions-item>
+    <a-descriptions-item label="任务名称">
+      {{ taskDetail.name }}
+    </a-descriptions-item>
+    <a-descriptions-item label="任务状态">
+      <a-tag v-if="taskDetail.status === 'pending'" color="grey">
+        排队中
+      </a-tag>
+      <a-tag v-else-if="taskDetail.status === 'running'" color="orange">
+        进行中
+      </a-tag>
+      <a-tag v-else-if="taskDetail.status === 'completed'" color="green">
+        已完成
+      </a-tag>
+      <a-tag v-else-if="taskDetail.status === 'failed'" color="red">
+        失败
+      </a-tag>
+    </a-descriptions-item>
+    <a-descriptions-item label="测绘项目">
+      <a @click="window.location.href = `/job/${taskDetail.job.id}`">{{ taskDetail.job.name }}</a>
+    </a-descriptions-item>
+    <a-descriptions-item label="任务创建时间">
+      {{ new Date(taskDetail.created_at).toLocaleString() }}
+    </a-descriptions-item>
+    <a-descriptions-item label="任务更新时间">
+      {{ new Date(taskDetail.updated_at).toLocaleString() }}
+    </a-descriptions-item>
+    <a-descriptions-item label="调用模块", span="3">
+      {{ taskDetail.method_name }}
+    </a-descriptions-item>
+    <a-descriptions-item label="错误日志" span="3">
+      <a-textarea
+        v-model="taskDetail.message"
+        :autosize="{ minRows: 3, maxRows: 3 }"
+        readonly
+      ></a-textarea>
+    </a-descriptions-item>
+    <a-descriptions-item label="模块输入" span="3">
+      <a-textarea
+        v-model="taskDetail.input"
+        :autosize="{ minRows: 3, maxRows: 3 }"
+        readonly
+      ></a-textarea>
+    </a-descriptions-item>
+    <a-descriptions-item label="模块输出" span="3">
+      <a-textarea
+        v-model="taskDetail.output"
+        :autosize="{ minRows: 3, maxRows: 3 }"
+        readonly
+      ></a-textarea>
+    </a-descriptions-item>
+  </a-descriptions>
+  <template slot="footer">
+    <a-button @click="taskDetailVisible = false">关闭</a-button>
+  </template>
+</a-modal>
+{% endraw %} {% endblock %} {% block modal %} {% raw %} {% endraw %} {% endblock
+%} {% block script %} {% raw %}
+<script>
+  new Vue({
+    el: "#app",
+    data() {
+      return {
+        tasks: [],
+        columns: [
+          { title: "名称", scopedSlots: { customRender: "name" },},
+          { title: "状态", scopedSlots: { customRender: "status" },},
+          { title: "测绘项目", scopedSlots: { customRender: "job" },},
+          { title: "创建时间", dataIndex: "created_at", customRender: (text) => {
+            return new Date(text).toLocaleString();
+          },},
+          { title: "更新时间", dataIndex: "updated_at", customRender: (text) => {
+            return new Date(text).toLocaleString();
+          },},
+          {
+            title: "操作",
+            scopedSlots: { customRender: "operation" },
+          },
+        ],
+        pagination: {
+          current: 1,
+          pageSize: 10,
+          total: 0,
+        },
+        taskDetailVisible: false,
+        taskDetail: {job: {}},
+        {% endraw %}{% include "data.js" %}{% raw %}
+      }
+    },
+    methods: {
+      fetchTasks() {
+        axios
+          .get("/api/tasks", {
+            params: {
+              offset: (this.pagination.current - 1) * this.pagination.pageSize,
+              limit: this.pagination.pageSize,
+            },
+          })
+          .then((res) => {
+            this.tasks = res.data.tasks;
+            this.pagination.total = res.data.total;
+          });
+      },
+      {% endraw %}{% include "methods.js" %}{% raw %}
+    },
+    mounted() {
+      this.fetchTasks();
+    },
+  });
+</script>
+{% endraw %} {% endblock %}

@@ -3,12 +3,19 @@ import uuid
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from fastapi import APIRouter, Depends, Request
-from sqlmodel import select
+from sqlmodel import func, select
 
 from db import SessionDep
 from models.error import Error
-from models.user import (MeUpdate, User, UserCreate, UserLogin, UserRead,
-                         UserUpdate)
+from models.user import (
+    MeUpdate,
+    User,
+    UserCreate,
+    UserLogin,
+    UserRead,
+    UserUpdate,
+    UsersRead,
+)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -18,9 +25,10 @@ def read_users(
     session: SessionDep,
     offset: int = 0,
     limit: int = 100,
-) -> list[UserRead]:
+) -> UsersRead:
     users = session.exec(select(User).offset(offset).limit(limit)).all()
-    return users
+    total = session.exec(select(func.count(User.id))).one()
+    return UsersRead(users=users, total=total)
 
 
 @router.put("/", dependencies=[Depends(User.is_admin)])

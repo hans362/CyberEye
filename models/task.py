@@ -3,6 +3,8 @@ from datetime import datetime
 
 from sqlmodel import Column, Field, SQLModel, Text
 
+from models.job import JobRead
+
 
 class TaskBase(SQLModel):
     name: str = Field(max_length=128)
@@ -33,6 +35,11 @@ class TaskRead(SQLModel):
     status: str
     message: str
     nonce: str
-    job_id: uuid.UUID
+    job: JobRead
     created_at: datetime
     updated_at: datetime
+
+
+class TasksRead(SQLModel):
+    tasks: list[TaskRead]
+    total: int
