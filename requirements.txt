@@ -9,3 +9,4 @@ dnspython
 Requests
 itsdangerous
 geoip2
+python-dotenv

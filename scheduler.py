@@ -6,8 +6,7 @@ from sqlmodel import select, update
 from db import Session, engine
 from models import *
 
-SCHEDULER_INTERVAL = 5
-
+from config import SCHEDULER_INTERVAL
 
 # 对于待启动的测绘项目，自动启动测绘项目，创建子域名收集任务
 def enter_subdomain_collect_stage():

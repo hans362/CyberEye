@@ -1,0 +1,43 @@
+services:
+  app:
+    build: .
+    restart: always
+    ports:
+      - "23333:8000"
+    volumes:
+      - .:/app
+      - /dev/null:/app/.env
+    environment:
+      - DATABASE_HOST=db
+      - ROLE=server
+  scheduler:
+    build: .
+    restart: always
+    volumes:
+      - .:/app
+      - /dev/null:/app/.env
+    environment:
+      - DATABASE_HOST=db
+      - ROLE=scheduler
+  worker:
+    build: .
+    restart: always
+    volumes:
+      - .:/app
+      - /dev/null:/app/.env
+    environment:
+      - DATABASE_HOST=db
+      - ROLE=worker
+    deploy:
+      replicas: 5
+  db:
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: cybereye
+    volumes:
+      - db_data:/var/lib/mysql
+volumes:
+  db_data:
+    driver: local

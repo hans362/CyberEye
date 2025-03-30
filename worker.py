@@ -10,7 +10,7 @@ from tasks.domain import ip_resolve, subdomain_collect
 from tasks.port import port_scan
 from tasks.service import service_scan
 
-WORKER_INTERVAL = 1
+from config import WORKER_INTERVAL
 
 funcs = {
     "ip_resolve": ip_resolve,
