@@ -17,7 +17,9 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
       @change="(pagination) => { this.pagination = pagination; this.fetchJobs(); }"
     >
       <template slot="name" slot-scope="text, record">
-        <a @click="window.location.href = `/job/${record.id}`"> {{ record.name }} </a>
+        <a @click="window.location.href = `/job/${record.id}`">
+          {{ record.name }}
+        </a>
       </template>
       <template slot="domain" slot-scope="text, record">
         <a @click="copyToClipboard(record.domain)">
@@ -38,8 +40,14 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
           <a-icon type="exclamation-circle"></a-icon> 任务失败
         </div>
       </template>
+      <template slot="owner" slot-scope="text, record">
+        <a-icon type="user"></a-icon>
+        {{ record.owner.username }}
+      </template>
       <template slot="operation" slot-scope="text, record">
-        <a-button type="link" @click="window.location.href = `/job/${record.id}`"
+        <a-button
+          type="link"
+          @click="window.location.href = `/job/${record.id}`"
           ><a-icon type="eye"></a-icon>详情</a-button
         >
         <a-button
@@ -114,6 +122,7 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
           { title: "名称", scopedSlots: { customRender: "name" },},
           { title: "目标域名", scopedSlots: { customRender: "domain" },},
           { title: "测绘状态", scopedSlots: { customRender: "status" },},
+          { title: "创建人", scopedSlots: { customRender: "owner" },},
           { title: "创建时间", dataIndex: "created_at", customRender: (text) => {
             return new Date(text).toLocaleString();
           },},
@@ -150,8 +159,20 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
             },
           })
           .then((res) => {
-            this.jobs = res.data.jobs;
-            this.pagination.total = res.data.total;
+            const r = res.data.jobs.map((job) => {
+              return axios
+                .get(`/api/users/${job.owner_id}`)
+                .then((res) => {
+                  job.owner = res.data;
+                })
+                .catch(() => {
+                  this.columns = this.columns.filter((col) => col.dataIndex !== "owner");
+                });
+            });
+            Promise.all(r).then(() => {
+              this.jobs = res.data.jobs;
+              this.pagination.total = res.data.total;
+            });
           });
       },
       createJob() {
@@ -204,6 +225,9 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
     },
     mounted() {
       this.fetchJobs();
+      setInterval(() => {
+        this.fetchJobs();
+      }, 5000);
     },
   });
 </script>

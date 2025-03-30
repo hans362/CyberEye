@@ -120,7 +120,8 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
         <a-table
           :columns="domainsColumns"
           :data-source="domains"
-          :pagination="false"
+          :pagination="domainsPagination"
+          @change="(pagination) => { this.domainsPagination = pagination; this.fetchJobDomains(); }"
         >
           <template slot="domain" slot-scope="text, record">
             <a @click="copyToClipboard(record.domain)">
@@ -131,7 +132,7 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
             <a-tag
               v-for="ip in record.ips"
               :key="ip"
-              color="green"
+              color="orange"
               @click="copyToClipboard(ip)"
               style="cursor: pointer"
             >
@@ -145,18 +146,116 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
           <a-icon type="api"></a-icon>
           IP 资产
         </span>
+        <a-table
+          :columns="ipsColumns"
+          :data-source="ips"
+          :pagination="ipsPagination"
+          @change="(pagination) => { this.ipsPagination = pagination; this.fetchJobIPs(); }"
+        >
+          <template slot="ip" slot-scope="text, record">
+            <a @click="copyToClipboard(record.ip)">
+              <a-icon type="api"></a-icon> {{ record.ip }}
+            </a>
+          </template>
+          <template slot="domain" slot-scope="text, record">
+            <a-tag
+              v-for="domain in record.domains"
+              :key="domain"
+              color="orange"
+              @click="copyToClipboard(domain)"
+              style="cursor: pointer"
+            >
+              {{ domain }}
+            </a-tag>
+          </template>
+          <template slot="port" slot-scope="text, record">
+            <a-tag
+              v-for="port in record.ports"
+              :key="port"
+              color="green"
+              @click="copyToClipboard(port)"
+              style="cursor: pointer"
+            >
+              {{ port }}
+            </a-tag>
+          </template>
+        </a-table>
       </a-tab-pane>
       <a-tab-pane key="4">
         <span slot="tab">
           <a-icon type="database"></a-icon>
           服务资产
         </span>
-        Tab 3
+        <div>
+          <a-card v-for="service in services" style="margin-bottom: 16px">
+            <a slot="title" @click="copyToClipboard('aaa.com')">
+              <a-icon type="global"></a-icon>
+              {{ service.domain }}
+            </a>
+            <span slot="extra">
+              <a-icon type="clock-circle"></a-icon>
+              {{ new Date(service.created_at).toLocaleString() }}
+            </span>
+            <a-card-grid style="width: 50%" :hoverable="false">
+              <div style="margin-bottom: 24px">
+                <a-tag color="green">
+                  <a-icon type="gold"></a-icon>
+                  {{ service.port }}
+                </a-tag>
+                <a-tag color="blue">
+                  <a-icon type="database"></a-icon>
+                  {{ service.protocol }}
+                </a-tag>
+                <div style="float: right">
+                  <span style="margin-right: 8px">
+                    <a-icon type="link"></a-icon>
+                    TCP
+                  </span>
+                  <span>
+                    <a-icon type="api"></a-icon>
+                    {{ service.ip }}
+                  </span>
+                </div>
+              </div>
+              <a-descriptions :column="2">
+                <a-descriptions-item label="自治域编号">
+                  -
+                </a-descriptions-item>
+                <a-descriptions-item label="网站服务器">
+                  -
+                </a-descriptions-item>
+                <a-descriptions-item label="自治域"> - </a-descriptions-item>
+                <a-descriptions-item label="网站编程语言">
+                  -
+                </a-descriptions-item>
+                <a-descriptions-item label="运营商"> - </a-descriptions-item>
+                <a-descriptions-item label="网站路径"> - </a-descriptions-item>
+                <a-descriptions-item label="IP 归属"> - </a-descriptions-item>
+                <a-descriptions-item label="主机名"> - </a-descriptions-item>
+              </a-descriptions>
+            </a-card-grid>
+            <a-card-grid
+              style="width: 50%; padding-top: 8px; box-shadow: none"
+              :hoverable="false"
+            >
+              <a-tabs default-active-key="1">
+                <a-tab-pane key="1" tab="端口响应">
+                  <a-textarea
+                    style="width: 100%"
+                    :autosize="{ minRows: 6, maxRows: 6 }"
+                    :value="service.banner"
+                    readonly
+                  ></a-textarea>
+                </a-tab-pane>
+              </a-tabs>
+            </a-card-grid>
+          </a-card>
+        </div>
       </a-tab-pane>
     </a-tabs>
   </a-card>
 </a-layout-content>
-{% endraw %} {% endblock %} {% block modal %} 111{% include "task.html" %} {%
+{% endraw %} {% endblock %} {% block modal %} {% include "task.html" %} {%
 endblock %} {% block script %} {% raw %}
 <script>
   new Vue({
@@ -199,7 +298,7 @@ endblock %} {% block script %} {% raw %}
         ],
         currentStep: 0,
         currentStepStatus: 'wait',
-        activeKey: [],
+        activeKey: ['subdomain_collect'],
         tasksColumns: [
           { title: "名称", scopedSlots: { customRender: "name" },},
           { title: "状态", scopedSlots: { customRender: "status" },},
@@ -217,12 +316,32 @@ endblock %} {% block script %} {% raw %}
         taskDetailVisible: false,
         taskDetail: {job: {}},
         domains: [],
+        domainsPagination: {
+          pageSize: 10,
+          current: 1,
+          total: 0,
+        },
         domainsColumns: [
           { title: "域名", scopedSlots: { customRender: "domain" },},
           { title: "IP 地址", scopedSlots: { customRender: "ip" },},
         ],
         ips: [],
+        ipsPagination: {
+          pageSize: 10,
+          current: 1,
+          total: 0,
+        },
+        ipsColumns: [
+          { title: "IP 地址", scopedSlots: { customRender: "ip" },},
+          { title: "域名", scopedSlots: { customRender: "domain" },},
+          { title: "开放端口", scopedSlots: { customRender: "port" },},
+        ],
         services: [],
+        servicesPagination: {
+          pageSize: 10,
+          current: 1,
+          total: 0,
+        },
         {% endraw %}{% include "data.js" %}{% raw %}
       }
     },
@@ -295,17 +414,29 @@ endblock %} {% block script %} {% raw %}
       fetchJobDomains() {
         const jobId = window.location.pathname.split("/").pop();
         axios
-          .get(`/api/jobs/${jobId}/domains`)
+          .get(`/api/jobs/${jobId}/domains`, {
+            params: {
+              offset: (this.domainsPagination.current - 1) * this.domainsPagination.pageSize,
+              limit: this.domainsPagination.pageSize,
+            },
+          })
           .then((res) => {
             this.domains = res.data.domains;
+            this.domainsPagination.total = res.data.total;
           });
       },
       fetchJobIPs() {
         const jobId = window.location.pathname.split("/").pop();
         axios
-          .get(`/api/jobs/${jobId}/ips`)
+          .get(`/api/jobs/${jobId}/ips`, {
+            params: {
+              offset: (this.ipsPagination.current - 1) * this.ipsPagination.pageSize,
+              limit: this.ipsPagination.pageSize,
+            },
+          })
           .then((res) => {
             this.ips = res.data.ips;
+            this.ipsPagination.total = res.data.total;
           });
       },
       fetchJobServices() {
@@ -314,6 +445,7 @@ endblock %} {% block script %} {% raw %}
           .get(`/api/jobs/${jobId}/services`)
           .then((res) => {
             this.services = res.data.services;
+            this.servicesPagination.total = res.data.total;
           });
       },
       {% endraw %}{% include "methods.js" %}{% raw %}
@@ -324,7 +456,7 @@ endblock %} {% block script %} {% raw %}
       setInterval(() => {
         this.fetchJob();
         this.fetchJobTasks();
-      }, 5000);
+      }, 2000);
     },
   });
 </script>

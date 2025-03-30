@@ -69,3 +69,28 @@ class JobDomainRead(SQLModel):
 class JobDomainsRead(SQLModel):
     domains: list[JobDomainRead]
     total: int
+
+
+class JobIPRead(SQLModel):
+    ip: str
+    domains: list[str]
+    ports: list[int]
+
+
+class JobIPsRead(SQLModel):
+    ips: list[JobIPRead]
+    total: int
+
+
+class JobServiceRead(SQLModel):
+    domain: str
+    ip: str
+    port: int
+    banner: str
+    protocol: str
+    created_at: datetime
+
+
+class JobServicesRead(SQLModel):
+    services: list[JobServiceRead]
+    total: int

@@ -49,7 +49,7 @@ class User(UserBase, table=True):
             .role
             != "admin"
         ):
-            raise HTTPException(status_code=401, detail="Unauthenticated")
+            raise HTTPException(status_code=403, detail="Unauthorized")
         return session.exec(
             select(User).where(User.id == uuid.UUID(request.session.get("uid")))
         ).first()
