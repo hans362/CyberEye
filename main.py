@@ -9,7 +9,9 @@ from starlette.middleware.sessions import SessionMiddleware
 from api.job import router as job_router
 from api.task import router as task_router
 from api.user import router as user_router
+from api.util import router as util_router
 from db import SessionDep, create_db_and_tables
+from geoip import update_databases
 from models.user import User
 
 if not os.path.exists(os.path.join(os.getcwd(), "data")):
@@ -17,6 +19,8 @@ if not os.path.exists(os.path.join(os.getcwd(), "data")):
 
 if not os.path.exists("data/.secretkey"):
     open("data/.secretkey", "wb").write(os.urandom(32))
+
+update_databases()
 
 app = FastAPI()
 app.add_middleware(
@@ -38,6 +42,7 @@ api = FastAPI()
 api.include_router(user_router)
 api.include_router(job_router)
 api.include_router(task_router)
+api.include_router(util_router)
 app.mount("/api", api)
 
 

@@ -186,7 +186,13 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
           <a-icon type="database"></a-icon>
           服务资产
         </span>
-        <div>
+        <div
+          v-if="services.length === 0"
+          style="text-align: center; margin-top: 32px; margin-bottom: 32px"
+        >
+          <a-empty description="暂无数据"></a-empty>
+        </div>
+        <div v-else>
           <a-card v-for="service in services" style="margin-bottom: 16px">
             <a slot="title" @click="copyToClipboard('aaa.com')">
               <a-icon type="global"></a-icon>
@@ -219,19 +225,29 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
               </div>
               <a-descriptions :column="2">
                 <a-descriptions-item label="自治域编号">
-                  -
+                  {{ service.asn }}
                 </a-descriptions-item>
                 <a-descriptions-item label="网站服务器">
-                  -
+                  {{ service.server }}
                 </a-descriptions-item>
-                <a-descriptions-item label="自治域"> - </a-descriptions-item>
-                <a-descriptions-item label="网站编程语言">
-                  -
+                <a-descriptions-item label="自治域">
+                  {{ service.asn_organization }}
                 </a-descriptions-item>
-                <a-descriptions-item label="运营商"> - </a-descriptions-item>
-                <a-descriptions-item label="网站路径"> - </a-descriptions-item>
-                <a-descriptions-item label="IP 归属"> - </a-descriptions-item>
-                <a-descriptions-item label="主机名"> - </a-descriptions-item>
+                <a-descriptions-item label="网站框架">
+                  {{ service.powered_by }}
+                </a-descriptions-item>
+                <a-descriptions-item label="运营商">
+                  {{ service.asn_organization }}
+                </a-descriptions-item>
+                <a-descriptions-item label="网站标题">
+                  {{ service.title }}
+                </a-descriptions-item>
+                <a-descriptions-item label="IP 归属">
+                  {{ service.country }} {{ service.city }}
+                </a-descriptions-item>
+                <a-descriptions-item label="主机名">
+                  {{ service.reverse_dns }}
+                </a-descriptions-item>
               </a-descriptions>
             </a-card-grid>
             <a-card-grid
@@ -250,6 +266,13 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
               </a-tabs>
             </a-card-grid>
           </a-card>
+          <a-pagination
+            style="text-align: center; margin-top: 16px"
+            :page-size="servicesPagination.pageSize"
+            :current="servicesPagination.current"
+            :total="servicesPagination.total"
+            @change="(page) => { this.servicesPagination.current = page; this.fetchJobServices(); }"
+          ></a-pagination>
         </div>
       </a-tab-pane>
     </a-tabs>
@@ -442,10 +465,49 @@ endblock %} {% block script %} {% raw %}
       fetchJobServices() {
         const jobId = window.location.pathname.split("/").pop();
         axios
-          .get(`/api/jobs/${jobId}/services`)
+          .get(`/api/jobs/${jobId}/ips`, {
+            params: {
+              offset: (this.ipsPagination.current - 1) * this.ipsPagination.pageSize,
+              limit: this.ipsPagination.pageSize,
+            },
+          })
           .then((res) => {
-            this.services = res.data.services;
-            this.servicesPagination.total = res.data.total;
+            const r = res.data.ips.map((ip) => {
+              return axios
+                .get(`/api/utils/ip/${ip.ip}`)
+                .then((res) => {
+                  Object.assign(ip, res.data);
+                })
+                .catch((err) => {
+                });
+            });
+            Promise.all(r).then(() => {
+              this.ips = res.data.ips;
+              this.ipsPagination.total = res.data.total;
+              axios
+                .get(`/api/jobs/${jobId}/services`, {
+                  params: {
+                    offset: (this.servicesPagination.current - 1) * this.servicesPagination.pageSize,
+                    limit: this.servicesPagination.pageSize,
+                  },
+                })
+                .then((res) => {
+                  res.data.services.map((service) => {
+                    const ip = this.ips.find((ip) => ip.ip === service.ip);
+                    service.asn = ip && typeof(ip.asn) === 'number' ? 'AS' + ip.asn.toString() : "未知";
+                    service.asn_organization = ip ? ip.asn_organization : "未知";
+                    service.country = ip ? ip.country : "未知";
+                    service.country_code = ip ? ip.country_code : "未知";
+                    service.city = ip ? ip.city : "未知";
+                    service.reverse_dns = ip ? ip.reverse_dns : "未知";
+                    service.server = service.banner.match(/Server:\s*(.+?)\r\n/i) ? service.banner.match(/Server:\s*(.+?)\r\n/i)[1] : '未知';
+                    service.powered_by = service.banner.match(/X-Powered-By:\s*(.+?)\r\n/i) ? service.banner.match(/X-Powered-By:\s*(.+?)\r\n/i)[1] : '未知';
+                    service.title = service.banner.match(/<title>(.+?)<\/title>/i) ? service.banner.match(/<title>(.+?)<\/title>/i)[1] : '未知';
+                  });
+                  this.services = res.data.services;
+                  this.servicesPagination.total = res.data.total;
+                });
+            });
           });
       },
       {% endraw %}{% include "methods.js" %}{% raw %}

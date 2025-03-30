@@ -139,7 +139,7 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
           pageSize: 10,
           total: 0,
         },
-        createJobVisible: false,
+        createJobVisible: window.location.search.includes("new=true"),
         editJobVisible: false,
         jobForm: {
           name: "",

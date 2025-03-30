@@ -1,8 +1,80 @@
 {% extends "base.html" %} {% block title %}首页{% endblock %} {% block menu_key
 %}index{% endblock %} {% block content %} {% raw %}
 <a-layout-content style="margin: 16px">
-  <a-card title="欢迎" style="margin-bottom: 16px">
-    <p>欢迎使用 CyberEye 网络空间测绘系统</p>
+  <a-card style="margin-bottom: 16px">
+    <a-row>
+      <a-col :span="6">
+        <a-statistic
+          title="测绘项目（正常 / 全部）"
+          :value="statistics.total_jobs - statistics.error_jobs"
+          style="margin-right: 50px"
+        >
+          <template #suffix>
+            <span> / {{ statistics.total_jobs }}</span>
+          </template>
+        </a-statistic>
+      </a-col>
+      <a-col :span="6">
+        <a-statistic
+          title="任务队列（正常 / 全部）"
+          :value="statistics.total_tasks - statistics.error_tasks"
+          style="margin-right: 50px"
+        >
+          <template #suffix>
+            <span> / {{ statistics.total_tasks }}</span>
+          </template>
+        </a-statistic>
+      </a-col>
+      <a-col :span="4">
+        <a-statistic title="域名资产" :value="statistics.domains">
+        </a-statistic>
+      </a-col>
+      <a-col :span="4">
+        <a-statistic title="IP 资产" :value="statistics.ips"> </a-statistic>
+      </a-col>
+      <a-col :span="4">
+        <a-statistic title="服务资产" :value="statistics.services">
+        </a-statistic>
+      </a-col>
+    </a-row>
+  </a-card>
+  <a-card>
+    <a-result title="欢迎使用 CyberEye 网络空间测绘系统">
+      <template #icon>
+        <a-icon type="smile" theme="twoTone" />
+      </template>
+      <template #extra>
+        <a-button
+          type="primary"
+          @click="window.location.href='/jobs/?new=true'"
+          :size="'large'"
+        >
+          <a-icon type="plus"></a-icon>
+          创建新的测绘项目
+        </a-button>
+      </template>
+      <div class="desc">
+        <p style="font-size: 16px">
+          CyberEye
+          能够对指定目标暴露在互联网上的服务器和设备进行资产探测、端口探活、协议解析、应用识别，从而测绘出目标的网络空间资产图谱。
+        </p>
+        <p>
+          <a-icon :style="{ color: 'blue' }" type="info-circle"></a-icon>
+          对于企业运维人员，CyberEye
+          可帮助评估企业信息资产在互联网上的暴露程度，及时发现潜在的安全隐患，降低网络攻击面。
+        </p>
+        <p>
+          <a-icon :style="{ color: 'blue' }" type="info-circle"></a-icon>
+          对于渗透测试人员，CyberEye
+          可帮助快速识别目标资产，寻找潜在的攻击面，提升渗透测试效率。
+        </p>
+        <p>
+          <a-icon :style="{ color: 'blue' }" type="info-circle"></a-icon>
+          对于安全研究人员，CyberEye
+          可帮助分析漏洞影响范围分析、统计应用分布、统计应用流行度排名等。
+        </p>
+      </div>
+    </a-result>
   </a-card>
 </a-layout-content>
 {% endraw %} {% endblock %} {% block script %} {% raw %}
@@ -11,13 +83,34 @@
     el: "#app",
     data() {
       return {
+        statistics: {
+          total_jobs: 0,
+          error_jobs: 0,
+          total_tasks: 0,
+          error_tasks: 0,
+          domains: 0,
+          ips: 0,
+          services: 0,
+        },
         {% endraw %}{% include "data.js" %}{% raw %}
       }
     },
     methods: {
+      fetchStatistics() {
+        axios.get("/api/utils/statistics").then((res) => {
+          if (res.data.message || res.data.detail) {
+            this.$message.error(res.data.message || res.data.detail);
+            return;
+          }
+          this.statistics = res.data;
+        }).catch((error) => {
+          this.$message.error("获取统计信息失败");
+        });
+      },
       {% endraw %}{% include "methods.js" %}{% raw %}
     },
     mounted() {
+      this.fetchStatistics();
     },
   });
 </script>
