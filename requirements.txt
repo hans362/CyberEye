@@ -4,3 +4,6 @@ sqlmodel
 argon2-cffi
 PyMySQL
 cryptography
+beautifulsoup4
+dnspython
+Requests
