@@ -11,6 +11,7 @@ import dns.zone
 import logging
 import shutil
 import platform
+import uuid
 from typing import Optional
 
 logging.basicConfig(level=logging.INFO)
@@ -57,7 +58,7 @@ class ActiveSubdomainScanner():
                 return None
 
         TEMP_DIR.mkdir(exist_ok=True)
-        domains_path = TEMP_DIR / "temp_domains.txt"
+        domains_path = TEMP_DIR / f"{uuid.uuid4().hex}_domains.txt"
         with open(domains_path, 'w') as outfile:
             for domain in domains:
                 outfile.write(domain + '\n')
@@ -73,7 +74,7 @@ class ActiveSubdomainScanner():
         massdns_path = get_massdns_path()
         resolver_path = MASSDNS_PATH /"lists" / "resolvers.txt"
         TEMP_DIR.mkdir(exist_ok=True)
-        out_file = TEMP_DIR / "results.txt"
+        out_file = TEMP_DIR / f"{uuid.uuid4().hex}_results.txt"
         if not massdns_path.exists():
             logger.error("MassDNS not found.")
             return None
@@ -81,6 +82,7 @@ class ActiveSubdomainScanner():
         logger.info("Running MassDNS...")
         command = f"{massdns_path} --quiet -r {resolver_path} -t A -o S {domains_path} > {out_file}"
         subprocess.run(command, shell=True)
+        domains_path.unlink()
         return out_file
 
     def extract_domains_from_file(self, file_path: Path) -> set[str]:
@@ -92,6 +94,7 @@ class ActiveSubdomainScanner():
                 if match:
                     domain = match.group(1).rstrip('.')  # 去掉结尾的点
                     domains.add(domain)
+        file_path.unlink()
         return domains
 
     def single_dns_resolve(self, domain: str) -> set[str]:
@@ -255,7 +258,10 @@ class ActiveSubdomainScanner():
             f"Active subdomain scan completed: "
             f"{len(valid_domains)} valid subdomains discovered in {end_time - time1:.2f} seconds."
         )
-        shutil.rmtree(TEMP_DIR)
+        try:
+            TEMP_DIR.rmdir()
+        except OSError:
+            pass
         return valid_domains
 
 
