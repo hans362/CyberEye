@@ -47,10 +47,13 @@ def update_databases() -> None:
         ):
             print(f"Skipped updating {database} database.")
             continue
-        if _download_database(database):
-            print(f"Downloaded {database} database.")
-        else:
-            print(f"Failed to download {database} database.")
+        try:
+            if _download_database(database):
+                print(f"Downloaded {database} database.")
+            else:
+                print(f"Failed to download {database} database.")
+        except Exception as e:
+            print(f"Error downloading {database} database: {e}")
     print("Database update completed.")
 
 
