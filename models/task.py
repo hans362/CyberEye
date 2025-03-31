@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 from sqlmodel import Column, Field, SQLModel, Text
+from sqlalchemy.dialects.mysql import LONGTEXT
 
 from models.job import JobRead
 
@@ -9,8 +10,8 @@ from models.job import JobRead
 class TaskBase(SQLModel):
     name: str = Field(max_length=128)
     method_name: str = Field(max_length=256)
-    input: str = Field(sa_column=Column(Text))
-    output: str = Field(sa_column=Column(Text))
+    input: str = Field(sa_column=Column(LONGTEXT))
+    output: str = Field(sa_column=Column(LONGTEXT))
     status: str = Field(default="pending", max_length=32)
     message: str = Field(default="", sa_column=Column(Text))
     nonce: str = Field(default="", max_length=128)

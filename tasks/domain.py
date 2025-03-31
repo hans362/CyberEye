@@ -24,8 +24,8 @@ def subdomain_collect(domain: str) -> list[str]:
     )
 
 
-def ip_resolve(domain: str) -> list[str]:
-    return ["127.0.0.1", "12.34.56.78"]
+def ip_resolve(domains: list[str]) -> dict[str, list[str]]:
+    return {domain: ["1.1.1.1", "12.34.56.78"] for domain in domains}
 
 
 if __name__ == "__main__":
