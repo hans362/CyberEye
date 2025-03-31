@@ -2,8 +2,119 @@
 menu_key %}search{% endblock %} {% block content %} {% raw %}
 <a-layout-content style="margin: 16px">
   <a-card style="margin-bottom: 16px">
-    {% endraw %}{% include "service.html" %}{% raw %}
+    <a-row>
+      <a-col :span="5">
+        <a-form-item
+          label="测绘项目"
+          style="display: flex; align-items: center"
+        >
+          <a-auto-complete
+            :data-source="jobs"
+            v-model="searchForm.job_id"
+            style="width: 100%"
+            @change="handleJobChange"
+          ></a-auto-complete>
+        </a-form-item>
+      </a-col>
+      <a-col :span="6">
+        <a-form-item label="域名" style="display: flex; align-items: center">
+          <a-input-group compact>
+            <a-select v-model="searchForm.domain_method" style="width: 40%">
+              <a-select-option value="eq"> 精确匹配 </a-select-option>
+              <a-select-option value="like"> 模糊匹配 </a-select-option>
+            </a-select>
+            <a-input
+              v-model="searchForm.domain"
+              placeholder="example.com"
+              style="width: 60%"
+            ></a-input>
+          </a-input-group>
+        </a-form-item>
+      </a-col>
+      <a-col :span="6">
+        <a-form-item label="IP 地址" style="display: flex; align-items: center">
+          <a-input-group compact>
+            <a-select v-model="searchForm.ip_method" style="width: 40%">
+              <a-select-option value="eq"> 精确匹配 </a-select-option>
+              <a-select-option value="like"> 模糊匹配 </a-select-option>
+            </a-select>
+            <a-input
+              v-model="searchForm.ip"
+              placeholder="0.0.0.0"
+              style="width: 60%"
+            ></a-input>
+          </a-input-group>
+        </a-form-item>
+      </a-col>
+      <a-col :span="3">
+        <a-form-item label="端口" style="display: flex; align-items: end">
+          <a-input-number
+            v-model="searchForm.port"
+            placeholder="80"
+            :min="0"
+            :max="65535"
+          >
+          </a-input-number>
+        </a-form-item>
+      </a-col>
+      <a-col :span="3">
+        <a-form-item label="协议" style="display: flex; align-items: end">
+          <a-select v-model="searchForm.protocol" style="width: 200%">
+            <a-select-option value="">全部</a-select-option>
+            <a-select-option value="HTTP">HTTP</a-select-option>
+            <a-select-option value="HTTPS">HTTPS</a-select-option>
+            <a-select-option value="SSH">SSH</a-select-option>
+          </a-select>
+        </a-form-item>
+      </a-col>
+    </a-row>
+    <a-row>
+      <a-col :span="24">
+        <a-form-item label="端口响应">
+          <a-input-group compact>
+            <a-select v-model="searchForm.banner_method" style="width: 10%">
+              <a-select-option value="like"> 模糊匹配 </a-select-option>
+            </a-select>
+            <a-input
+              v-model="searchForm.banner"
+              placeholder="Server: nginx"
+              style="width: 90%"
+            ></a-input>
+          </a-input-group>
+        </a-form-item>
+        <div style="float: right">
+          <a-button
+            type="primary"
+            html-type="submit"
+            @click="() => { this.services = []; this.servicesPagination.current = 1; this.fetchServices(); }"
+          >
+            <a-icon type="search"></a-icon>
+            搜索
+          </a-button>
+          <a-button :style="{ marginLeft: '8px' }" @click="resetSearchForm">
+            <a-icon type="reload"></a-icon>
+            重置
+          </a-button>
+        </div>
+      </a-col>
+    </a-row>
   </a-card>
+  <div
+    v-if="services.length === 0"
+    style="text-align: center; margin-top: 32px; margin-bottom: 32px"
+  >
+    <a-empty description="暂无数据"></a-empty>
+  </div>
+  <div v-else>
+    {% endraw %}{% include "service.html" %}{% raw %}
+    <a-pagination
+      style="text-align: center; margin-top: 16px"
+      :page-size="servicesPagination.pageSize"
+      :current="servicesPagination.current"
+      :total="servicesPagination.total"
+      @change="(page) => { this.servicesPagination.current = page; this.fetchServices(); }"
+    ></a-pagination>
+  </div>
 </a-layout-content>
 {% endraw %} {% endblock %} {% block modal %} {% raw %} {% endraw %} {% endblock
 %} {% block script %} {% raw %}
@@ -18,26 +129,122 @@ menu_key %}search{% endblock %} {% block content %} {% raw %}
           current: 1,
           total: 0,
         },
+        searchForm: {
+          job_id: "",
+          domain: null,
+          domain_method: "eq",
+          ip: null,
+          ip_method: "eq",
+          port: null,
+          banner: null,
+          banner_method: "like",
+          protocol: "",
+        },
+        jobs: [],
         {% endraw %}{% include "data.js" %}{% raw %}
       }
     },
     methods: {
       fetchServices() {
+        let searchParams = {};
+        if (this.searchForm.job_id) {
+          searchParams.job_id = this.searchForm.job_id;
+        }
+        if (this.searchForm.domain) {
+          this.searchForm.domain_method == "eq" ?
+            searchParams.domain = this.searchForm.domain :
+            searchParams.domain_like = this.searchForm.domain;
+        }
+        if (this.searchForm.ip) {
+          this.searchForm.ip_method == "eq" ?
+            searchParams.ip = this.searchForm.ip :
+            searchParams.ip_like = this.searchForm.ip;
+        }
+        if (this.searchForm.port) {
+          searchParams.port = this.searchForm.port;
+        }
+        if (this.searchForm.banner) {
+          searchParams.banner_like = this.searchForm.banner;
+        }
+        if (this.searchForm.protocol) {
+          searchParams.protocol = this.searchForm.protocol;
+        }
         axios
-          .post("/api/utils/search", {
+          .post("/api/utils/search", searchParams, {
             params: {
               offset: (this.servicesPagination.current - 1) * this.servicesPagination.pageSize,
               limit: this.servicesPagination.pageSize,
             },
           })
-          .then((response) => {
-            this.services = response.data;
+          .then((res) => {
+            const r = res.data.services.map((service) => {
+              service.server = service.banner.match(/Server:\s*(.+?)\r\n/i) ? service.banner.match(/Server:\s*(.+?)\r\n/i)[1] : '未知';
+              service.powered_by = service.banner.match(/X-Powered-By:\s*(.+?)\r\n/i) ? service.banner.match(/X-Powered-By:\s*(.+?)\r\n/i)[1] : '未知';
+              service.title = service.banner.match(/<title>(.+?)<\/title>/i) ? service.banner.match(/<title>(.+?)<\/title>/i)[1] : '未知';
+              return axios
+                .get(`/api/utils/ip/${service.ip}`)
+                .then((res) => {
+                  Object.assign(service, res.data);
+                })
+                .catch((err) => {
+                });
+            })
+            Promise.all(r).then(() => {
+              this.services = res.data.services;
+              this.servicesPagination.total = res.data.total;
+            });
           })
+          .catch((err) => {
+            this.services = [];
+            this.servicesPagination.total = 0;
+            this.$message.error("获取数据失败");
+          });
+      },
+      handleJobChange(value) {
+        axios
+          .get(`/api/utils/search/jobs`, {
+            params: {
+              name: value,
+            },
+          })
+          .then((res) => {
+            this.jobs = res.data.map((job) => {
+              return {
+                value: job.id,
+                text: job.name,
+              };
+            });
+            this.jobs.unshift({
+              value: "",
+              text: "全部",
+            });
+          })
+          .catch((err) => {
+            this.jobs = [];
+          });
+      },
+      resetSearchForm() {
+        this.searchForm = {
+          job_id: "",
+          domain: null,
+          domain_method: "eq",
+          ip: null,
+          ip_method: "eq",
+          port: null,
+          banner: null,
+          banner_method: "like",
+          protocol: "",
+        };
+        this.services = [];
+        this.servicesPagination.total = 0;
+        this.servicesPagination.current = 1;
+        this.fetchServices();
       },
       {% endraw %}{% include "methods.js" %}{% raw %}
     },
     mounted() {
       this.fetchServices();
+      this.handleJobChange(this.searchForm.job_id);
     },
   });
 </script>
