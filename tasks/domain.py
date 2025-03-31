@@ -1,4 +1,4 @@
-from subdomain_scanner import ActiveSubdomainScanner
+from .subdomain_scanner import ActiveSubdomainScanner
 
 def subdomain_collect_method1(domain: str) -> list[str]:
     # return ["aaa." + domain]
