@@ -80,8 +80,11 @@ class ActiveSubdomainScanner():
             return None
         massdns_path.chmod(64)
         logger.info("Running MassDNS...")
-        command = f"{massdns_path} --quiet -r {resolver_path} -t A -o S {domains_path} > {out_file}"
-        subprocess.run(command, shell=True)
+        # command = f"{massdns_path} --quiet -r {resolver_path} -t A -o S {domains_path} > {out_file}"
+        # subprocess.run(command, shell=True)
+        # 路径中可能包含空格等特殊字符，不能直接拼接命令
+        with open(out_file, 'w') as outfile:
+            subprocess.run([massdns_path, '--quiet', '-r', resolver_path, '-t', 'A', '-o', 'S', domains_path], stdout=outfile)
         domains_path.unlink()
         return out_file
 

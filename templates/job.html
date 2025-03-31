@@ -393,48 +393,28 @@ endblock %} {% block script %} {% raw %}
       fetchJobServices() {
         const jobId = window.location.pathname.split("/").pop();
         axios
-          .get(`/api/jobs/${jobId}/ips`, {
+          .get(`/api/jobs/${jobId}/services`, {
             params: {
-              offset: (this.ipsPagination.current - 1) * this.ipsPagination.pageSize,
-              limit: this.ipsPagination.pageSize,
+              offset: (this.servicesPagination.current - 1) * this.servicesPagination.pageSize,
+              limit: this.servicesPagination.pageSize,
             },
           })
           .then((res) => {
-            const r = res.data.ips.map((ip) => {
+            const r = res.data.services.map((service) => {
+              service.server = service.banner.match(/Server:\s*(.+?)\r\n/i) ? service.banner.match(/Server:\s*(.+?)\r\n/i)[1] : '未知';
+              service.powered_by = service.banner.match(/X-Powered-By:\s*(.+?)\r\n/i) ? service.banner.match(/X-Powered-By:\s*(.+?)\r\n/i)[1] : '未知';
+              service.title = service.banner.match(/<title>(.+?)<\/title>/i) ? service.banner.match(/<title>(.+?)<\/title>/i)[1] : '未知';
               return axios
-                .get(`/api/utils/ip/${ip.ip}`)
+                .get(`/api/utils/ip/${service.ip}`)
                 .then((res) => {
-                  Object.assign(ip, res.data);
+                  Object.assign(service, res.data);
                 })
                 .catch((err) => {
                 });
             });
             Promise.all(r).then(() => {
-              this.ips = res.data.ips;
-              this.ipsPagination.total = res.data.total;
-              axios
-                .get(`/api/jobs/${jobId}/services`, {
-                  params: {
-                    offset: (this.servicesPagination.current - 1) * this.servicesPagination.pageSize,
-                    limit: this.servicesPagination.pageSize,
-                  },
-                })
-                .then((res) => {
-                  res.data.services.map((service) => {
-                    const ip = this.ips.find((ip) => ip.ip === service.ip);
-                    service.asn = ip && typeof(ip.asn) === 'number' ? 'AS' + ip.asn.toString() : "未知";
-                    service.asn_organization = ip ? ip.asn_organization : "未知";
-                    service.country = ip ? ip.country : "未知";
-                    service.country_code = ip ? ip.country_code : "未知";
-                    service.city = ip ? ip.city : "未知";
-                    service.reverse_dns = ip ? ip.reverse_dns : "未知";
-                    service.server = service.banner.match(/Server:\s*(.+?)\r\n/i) ? service.banner.match(/Server:\s*(.+?)\r\n/i)[1] : '未知';
-                    service.powered_by = service.banner.match(/X-Powered-By:\s*(.+?)\r\n/i) ? service.banner.match(/X-Powered-By:\s*(.+?)\r\n/i)[1] : '未知';
-                    service.title = service.banner.match(/<title>(.+?)<\/title>/i) ? service.banner.match(/<title>(.+?)<\/title>/i)[1] : '未知';
-                  });
-                  this.services = res.data.services;
-                  this.servicesPagination.total = res.data.total;
-                });
+              this.services = res.data.services;
+              this.servicesPagination.total = res.data.total;
             });
           });
       },
