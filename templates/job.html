@@ -69,8 +69,11 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
             >
               <a-table
                 :columns="tasksColumns"
-                :data-source="tasks.filter(task => task.method_name === step.method_name)"
-                :pagination="false"
+                :data-source="tasks.filter(task => task.method_name === step.method_name).slice((step.pagination.current - 1) * step.pagination.pageSize, step.pagination.current * step.pagination.pageSize)"
+                :pagination="step.pagination"
+                @change="(pagination) => {
+                  step.pagination = pagination;
+                }"
               >
                 <template slot="name" slot-scope="text, record">
                   <a @click="fetchTask(record.id); taskDetailVisible = true">
@@ -221,30 +224,55 @@ endblock %} {% block script %} {% raw %}
             name: '子域名收集',
             description: '收集目标子域名信息',
             time: null,
+            pagination: {
+              pageSize: 10,
+              current: 1,
+              total: 0,
+            },
           },
           {
             method_name: 'ip_resolve',
             name: 'IP 地址解析',
             description: '解析子域名 IP 地址',
             time: null,
+            pagination: {
+              pageSize: 10,
+              current: 1,
+              total: 0,
+            },
           },
           {
             method_name: 'port_scan',
             name: '端口扫描',
             description: '扫描主机的开放端口',
             time: null,
+            pagination: {
+              pageSize: 10,
+              current: 1,
+              total: 0,
+            },
           },
           {
             method_name: 'service_scan',
             name: '服务扫描',
             description: '扫描主机的已知服务',
             time: null,
+            pagination: {
+              pageSize: 10,
+              current: 1,
+              total: 0,
+            },
           },
           {
             method_name: 'complete',
             name: '完成测绘',
             description: '整理生成测绘结果',
             time: null,
+            pagination: {
+              pageSize: 10,
+              current: 1,
+              total: 0,
+            },
           },
         ],
         currentStep: 0,
@@ -317,6 +345,9 @@ endblock %} {% block script %} {% raw %}
             this.tasks = res.data.tasks;
             this.steps.forEach((step) => {
               step.time = null;
+              step.pagination.total = this.tasks.filter(
+                (task) => task.method_name === step.method_name
+              ).length;
             });
             if (this.tasks.length > 0) {
               this.currentStep = this.steps.findIndex(
