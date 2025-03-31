@@ -120,6 +120,11 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
           <a-icon type="global"></a-icon>
           域名资产
         </span>
+        <a-form-item style="margin-bottom: 16px">
+          <a-input placeholder="搜索域名" @change="fetchJobDomains()" v-model="domainsSearch">
+            <a-icon slot="prefix" type="search"></a-icon>
+          </a-input>
+        </a-form-item>
         <a-table
           :columns="domainsColumns"
           :data-source="domains"
@@ -149,6 +154,11 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
           <a-icon type="api"></a-icon>
           IP 资产
         </span>
+        <a-form-item style="margin-bottom: 16px">
+          <a-input placeholder="搜索 IP 地址" @change="fetchJobIPs()" v-model="ipsSearch">
+            <a-icon slot="prefix" type="search"></a-icon>
+          </a-input>
+        </a-form-item>
         <a-table
           :columns="ipsColumns"
           :data-source="ips"
@@ -304,6 +314,7 @@ endblock %} {% block script %} {% raw %}
           { title: "域名", scopedSlots: { customRender: "domain" },},
           { title: "IP 地址", scopedSlots: { customRender: "ip" },},
         ],
+        domainsSearch: '',
         ips: [],
         ipsPagination: {
           pageSize: 10,
@@ -315,6 +326,7 @@ endblock %} {% block script %} {% raw %}
           { title: "域名", scopedSlots: { customRender: "domain" },},
           { title: "开放端口", scopedSlots: { customRender: "port" },},
         ],
+        ipsSearch: '',
         services: [],
         servicesPagination: {
           pageSize: 10,
@@ -398,6 +410,7 @@ endblock %} {% block script %} {% raw %}
         axios
           .get(`/api/jobs/${jobId}/domains`, {
             params: {
+              search: this.domainsSearch,
               offset: (this.domainsPagination.current - 1) * this.domainsPagination.pageSize,
               limit: this.domainsPagination.pageSize,
             },
@@ -412,6 +425,7 @@ endblock %} {% block script %} {% raw %}
         axios
           .get(`/api/jobs/${jobId}/ips`, {
             params: {
+              search: this.ipsSearch,
               offset: (this.ipsPagination.current - 1) * this.ipsPagination.pageSize,
               limit: this.ipsPagination.pageSize,
             },
