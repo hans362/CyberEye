@@ -1,3 +1,4 @@
+import uuid
 from sqlmodel import SQLModel
 
 
@@ -18,3 +19,19 @@ class Statistics(SQLModel):
     domains: int
     ips: int
     services: int
+
+
+class SearchInput(SQLModel):
+    job_id: uuid.UUID | None = None
+    domain: str | None = None
+    domain_like: str | None = None
+    ip: str | None = None
+    ip_like: str | None = None
+    port: int | None = None
+    banner_like: str | None = None
+    protocol: str | None = None
+
+
+class JobInfo(SQLModel):
+    id: uuid.UUID
+    name: str

@@ -1,0 +1,44 @@
+{% extends "base.html" %} {% block title %}聚合搜索{% endblock %} {% block
+menu_key %}search{% endblock %} {% block content %} {% raw %}
+<a-layout-content style="margin: 16px">
+  <a-card style="margin-bottom: 16px">
+    {% endraw %}{% include "service.html" %}{% raw %}
+  </a-card>
+</a-layout-content>
+{% endraw %} {% endblock %} {% block modal %} {% raw %} {% endraw %} {% endblock
+%} {% block script %} {% raw %}
+<script>
+  new Vue({
+    el: "#app",
+    data() {
+      return {
+        services: [],
+        servicesPagination: {
+          pageSize: 10,
+          current: 1,
+          total: 0,
+        },
+        {% endraw %}{% include "data.js" %}{% raw %}
+      }
+    },
+    methods: {
+      fetchServices() {
+        axios
+          .post("/api/utils/search", {
+            params: {
+              offset: (this.servicesPagination.current - 1) * this.servicesPagination.pageSize,
+              limit: this.servicesPagination.pageSize,
+            },
+          })
+          .then((response) => {
+            this.services = response.data;
+          })
+      },
+      {% endraw %}{% include "methods.js" %}{% raw %}
+    },
+    mounted() {
+      this.fetchServices();
+    },
+  });
+</script>
+{% endraw %} {% endblock %}

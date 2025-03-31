@@ -88,6 +88,17 @@ def job(request: Request, job_id: str, session: SessionDep):
         return RedirectResponse("/login")
 
 
+@app.get("/search")
+def search(request: Request, session: SessionDep):
+    try:
+        user = User.is_authenticated(request, session)
+        return templates.TemplateResponse(
+            "search.html", {"request": request, "user": user}
+        )
+    except Exception:
+        return RedirectResponse("/login")
+
+
 @app.get("/tasks")
 def tasks(request: Request, session: SessionDep):
     try:
