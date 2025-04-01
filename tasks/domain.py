@@ -10,11 +10,7 @@ def active_subdomain_collect(domain: str) -> list[str]:
 
 
 def subdomain_collect(domain: str) -> list[str]:
-    return list(
-        set(
-            active_subdomain_collect(domain))
-        )
-    )
+    return list(set(active_subdomain_collect(domain)))
 
 
 def get_ip_addr(domain: str) -> list[str]:
