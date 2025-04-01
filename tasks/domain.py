@@ -1,4 +1,7 @@
 from .subdomain_scanner import ActiveSubdomainScanner
+import socket
+from concurrent.futures import ThreadPoolExecutor
+
 
 def subdomain_collect_method1(domain: str) -> list[str]:
     # return ["aaa." + domain]
@@ -24,8 +27,18 @@ def subdomain_collect(domain: str) -> list[str]:
     )
 
 
+def get_ip_addr(domain: str) -> list[str]:
+    try:
+        ips = socket.getaddrinfo(domain, None)
+        return [ip[4][0] for ip in ips]
+    except Exception:
+        return []
+
+
 def ip_resolve(domains: list[str]) -> dict[str, list[str]]:
-    return {domain: ["1.1.1.1", "12.34.56.78"] for domain in domains}
+    with ThreadPoolExecutor() as executor:
+        results = list(executor.map(get_ip_addr, domains))
+    return {domain: ip for domain, ip in zip(domains, results)}
 
 
 if __name__ == "__main__":

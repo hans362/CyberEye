@@ -241,7 +241,7 @@ def read_job_ips(
         ips = {}
         for ip, domain in results:
             if ip.ip not in ips:
-                ips[ip.ip] = [[], [int(port) for port in ip.ports.split(",")]]
+                ips[ip.ip] = [[], [int(port) for port in ip.ports.split(",") if port]]
             if domain:
                 ips[ip.ip][0].append(domain)
         return JobIPsRead(
