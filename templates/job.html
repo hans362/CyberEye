@@ -466,8 +466,8 @@ endblock %} {% block script %} {% raw %}
             Promise.all(r).then(() => {
               this.services = res.data.services;
               this.servicesPagination.total = res.data.total;
+              this.servicesLoading = false;
             });
-            this.servicesLoading = false;
           });
       },
       {% endraw %}{% include "methods.js" %}{% raw %}

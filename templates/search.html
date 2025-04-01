@@ -200,8 +200,8 @@ menu_key %}search{% endblock %} {% block content %} {% raw %}
             Promise.all(r).then(() => {
               this.services = res.data.services;
               this.servicesPagination.total = res.data.total;
+              this.servicesLoading = false;
             });
-            this.servicesLoading = false;
           })
           .catch((err) => {
             this.services = [];
