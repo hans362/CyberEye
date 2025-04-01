@@ -4,26 +4,15 @@ import socket
 from concurrent.futures import ThreadPoolExecutor
 
 
-def subdomain_collect_method1(domain: str) -> list[str]:
-    # return ["aaa." + domain]
+def active_subdomain_collect(domain: str) -> list[str]:
     scanner = ActiveSubdomainScanner(domain)
     return list(scanner())
-
-
-def subdomain_collect_method2(domain: str) -> list[str]:
-    return ["bbb." + domain]
-
-
-def subdomain_collect_method3(domain: str) -> list[str]:
-    return ["ccc." + domain]
 
 
 def subdomain_collect(domain: str) -> list[str]:
     return list(
         set(
-            subdomain_collect_method1(domain)
-            + subdomain_collect_method2(domain)
-            + subdomain_collect_method3(domain)
+            active_subdomain_collect(domain))
         )
     )
 
