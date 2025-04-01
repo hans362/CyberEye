@@ -100,7 +100,13 @@ menu_key %}search{% endblock %} {% block content %} {% raw %}
     </a-row>
   </a-card>
   <div
-    v-if="services.length === 0"
+    v-if="servicesLoading"
+    style="text-align: center; margin-top: 64px; margin-bottom: 64px"
+  >
+    <a-spin tip="加载中..." size="large"> </a-spin>
+  </div>
+  <div
+    v-else-if="services.length === 0"
     style="text-align: center; margin-top: 32px; margin-bottom: 32px"
   >
     <a-empty description="暂无数据"></a-empty>
@@ -123,6 +129,7 @@ menu_key %}search{% endblock %} {% block content %} {% raw %}
     el: "#app",
     data() {
       return {
+        servicesLoading: true,
         services: [],
         servicesPagination: {
           pageSize: 10,
@@ -146,6 +153,7 @@ menu_key %}search{% endblock %} {% block content %} {% raw %}
     },
     methods: {
       fetchServices() {
+        this.servicesLoading = true;
         let searchParams = {};
         if (this.searchForm.job_id) {
           searchParams.job_id = this.searchForm.job_id;
@@ -193,11 +201,13 @@ menu_key %}search{% endblock %} {% block content %} {% raw %}
               this.services = res.data.services;
               this.servicesPagination.total = res.data.total;
             });
+            this.servicesLoading = false;
           })
           .catch((err) => {
             this.services = [];
             this.servicesPagination.total = 0;
             this.$message.error("获取数据失败");
+            this.servicesLoading = false;
           });
       },
       handleJobChange(value) {

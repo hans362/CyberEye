@@ -199,8 +199,12 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
           <a-icon type="database"></a-icon>
           服务资产
         </span>
+        <div v-if="servicesLoading" style="text-align: center; margin-top: 64px; margin-bottom: 64px">
+          <a-spin tip="加载中..." size="large">
+          </a-spin>
+        </div>
         <div
-          v-if="services.length === 0"
+          v-else-if="services.length === 0"
           style="text-align: center; margin-top: 32px; margin-bottom: 32px"
         >
           <a-empty description="暂无数据"></a-empty>
@@ -327,6 +331,7 @@ endblock %} {% block script %} {% raw %}
           { title: "开放端口", scopedSlots: { customRender: "port" },},
         ],
         ipsSearch: '',
+        servicesLoading: true,
         services: [],
         servicesPagination: {
           pageSize: 10,
@@ -436,6 +441,7 @@ endblock %} {% block script %} {% raw %}
           });
       },
       fetchJobServices() {
+        this.servicesLoading = true;
         const jobId = window.location.pathname.split("/").pop();
         axios
           .get(`/api/jobs/${jobId}/services`, {
@@ -461,6 +467,7 @@ endblock %} {% block script %} {% raw %}
               this.services = res.data.services;
               this.servicesPagination.total = res.data.total;
             });
+            this.servicesLoading = false;
           });
       },
       {% endraw %}{% include "methods.js" %}{% raw %}

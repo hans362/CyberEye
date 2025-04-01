@@ -31,7 +31,7 @@ def subdomain_collect(domain: str) -> list[str]:
 def get_ip_addr(domain: str) -> list[str]:
     try:
         ips = socket.getaddrinfo(domain, None)
-        return [ip[4][0] for ip in ips]
+        return sorted(list(set([ip[4][0] for ip in ips])))
     except Exception:
         return []
 
