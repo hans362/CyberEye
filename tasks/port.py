@@ -1,4 +1,4 @@
-from get_ip import get_ip
+from .get_ip import get_ip
 import socket
 from scapy.all import IP, TCP, sr1, sr, send, sendp
 
@@ -40,7 +40,7 @@ def open_ports_method2(ip):
     return open_ports
 
 
-def get_ports(input_str):
+def port_scan(input_str):
     ip = get_ip(input_str)
     if ip is None:
         print("Invalid IP address or domain.")

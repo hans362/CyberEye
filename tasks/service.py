@@ -1,9 +1,5 @@
 import socket
 import ssl
-import sys
-import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import requests
 
 common_ports = [21, 22, 23, 25, 53, 80, 81, 110, 135, 139, 443, 445, 1433, 1521, 3306, 5432, 6379, 7001, 8000, 8080, 8089, 9000, 9200, 11211, 27017]
 
