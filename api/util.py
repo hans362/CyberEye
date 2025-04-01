@@ -183,4 +183,4 @@ def search_jobs(
 
 @router.get("/search/protocols", dependencies=[Depends(User.is_authenticated)])
 def search_protocols() -> list[str]:
-    return SERVICE_SCAN_KEYWORDS.keys()
+    return ["HTTP", "HTTPS"] + SERVICE_SCAN_KEYWORDS.keys()
