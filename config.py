@@ -15,15 +15,19 @@ GEOIP_DATABASES_AUTO_UPDATE = False
 PORT_SCAN_RANGE = [
     21,
     22,
+    25,
     80,
     81,
+    110,
     135,
     139,
+    143,
     443,
     445,
     1433,
     1521,
     3306,
+    3389,
     5432,
     6379,
     7001,
@@ -36,6 +40,23 @@ PORT_SCAN_RANGE = [
     27017,
 ]
 PORT_SCAN_TIMEOUT = 1
+SERVICE_SCAN_KEYWORDS = {
+    "SSH": "SSH",
+    "SMTP": "SMTP",
+    "FTP": "FTP",
+    "MySQL": "MySQL",
+    "PostgreSQL": "PostgreSQL",
+    "Redis": "Redis",
+    "Elasticsearch": "Elasticsearch",
+    "Memcached": "Memcached",
+    "MongoDB": "MongoDB",
+    "IMAP": "IMAP",
+    "POP3": "POP3",
+    "SMB": "SMB",
+    "VNC": "VNC",
+    "RDP": "RDP",
+    "LDAP": "LDAP",
+}
 SERVICE_SCAN_TIMEOUT = 2
 
 SCHEDULER_INTERVAL = 5

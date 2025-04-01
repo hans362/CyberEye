@@ -5,8 +5,8 @@
     <a-row>
       <a-col :span="6">
         <a-statistic
-          title="测绘项目（正常 / 全部）"
-          :value="statistics.total_jobs - statistics.error_jobs"
+          title="测绘项目（已完成 / 全部）"
+          :value="statistics.completed_jobs"
           style="margin-right: 50px"
         >
           <template #suffix>
@@ -16,8 +16,8 @@
       </a-col>
       <a-col :span="6">
         <a-statistic
-          title="任务队列（正常 / 全部）"
-          :value="statistics.total_tasks - statistics.error_tasks"
+          title="任务队列（已完成 / 全部）"
+          :value="statistics.completed_tasks"
           style="margin-right: 50px"
         >
           <template #suffix>
@@ -85,9 +85,9 @@
       return {
         statistics: {
           total_jobs: 0,
-          error_jobs: 0,
+          completed_jobs: 0,
           total_tasks: 0,
-          error_tasks: 0,
+          completed_tasks: 0,
           domains: 0,
           ips: 0,
           services: 0,

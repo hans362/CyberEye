@@ -3,29 +3,12 @@ import socket
 import ssl
 import ipaddress
 from concurrent.futures import ThreadPoolExecutor
-from config import SERVICE_SCAN_TIMEOUT
+from config import SERVICE_SCAN_TIMEOUT, SERVICE_SCAN_KEYWORDS
 
 
 def detect_service(banner: str) -> str:
-    service_keywords = {
-        "SSH-": "SSH",
-        "220": "SMTP",
-        "220-": "FTP",
-        "MySQL": "MySQL",
-        "PostgreSQL": "PostgreSQL",
-        "Redis": "Redis",
-        "Elasticsearch": "Elasticsearch",
-        "Memcached": "Memcached",
-        "MongoDB": "MongoDB",
-        "IMAP": "IMAP",
-        "POP3": "POP3",
-        "SMB": "SMB",
-        "VNC": "VNC",
-        "RDP": "RDP",
-        "LDAP": "LDAP",
-    }
-    for keyword, service in service_keywords.items():
-        if keyword in banner:
+    for keyword, service in SERVICE_SCAN_KEYWORDS.items():
+        if keyword.lower() in banner.lower():
             return service
     return "未知"
 

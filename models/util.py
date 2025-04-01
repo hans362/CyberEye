@@ -13,9 +13,9 @@ class IPInfo(SQLModel):
 
 class Statistics(SQLModel):
     total_jobs: int
-    error_jobs: int
+    completed_jobs: int
     total_tasks: int
-    error_tasks: int
+    completed_tasks: int
     domains: int
     ips: int
     services: int

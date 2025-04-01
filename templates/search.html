@@ -60,10 +60,9 @@ menu_key %}search{% endblock %} {% block content %} {% raw %}
       <a-col :span="3">
         <a-form-item label="协议" style="display: flex; align-items: end">
           <a-select v-model="searchForm.protocol" style="width: 200%">
-            <a-select-option value="">全部</a-select-option>
-            <a-select-option value="HTTP">HTTP</a-select-option>
-            <a-select-option value="HTTPS">HTTPS</a-select-option>
-            <a-select-option value="SSH">SSH</a-select-option>
+            <a-select-option :value="p.value" v-for="p in protocols"
+              >{{ p.text }}</a-select-option
+            >
           </a-select>
         </a-form-item>
       </a-col>
@@ -148,6 +147,7 @@ menu_key %}search{% endblock %} {% block content %} {% raw %}
           protocol: "",
         },
         jobs: [],
+        protocols: [],
         {% endraw %}{% include "data.js" %}{% raw %}
       }
     },
@@ -233,6 +233,25 @@ menu_key %}search{% endblock %} {% block content %} {% raw %}
             this.jobs = [];
           });
       },
+      handleProtocolChange(value) {
+        axios
+          .get(`/api/utils/search/protocols`)
+          .then((res) => {
+            this.protocols = res.data.map((p) => {
+              return {
+                value: p,
+                text: p,
+              };
+            });
+            this.protocols.unshift({
+              value: "",
+              text: "全部",
+            });
+          })
+          .catch((err) => {
+            this.protocols = [];
+          });
+      },
       resetSearchForm() {
         this.searchForm = {
           job_id: "",
@@ -255,6 +274,7 @@ menu_key %}search{% endblock %} {% block content %} {% raw %}
     mounted() {
       this.fetchServices();
       this.handleJobChange(this.searchForm.job_id);
+      this.handleProtocolChange(this.searchForm.protocol);
     },
   });
 </script>

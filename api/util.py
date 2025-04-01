@@ -1,6 +1,7 @@
 import uuid
 from fastapi import APIRouter, Depends, Request
 
+from config import SERVICE_SCAN_KEYWORDS
 from models.job import Job, JobServiceRead, JobServicesRead
 from models.report import IPAddr, Service, SubDomain, SubDomainIPAddr
 from models.task import Task
@@ -55,8 +56,8 @@ def statistics(request: Request, session: SessionDep) -> Statistics | Error:
         except Exception:
             q = q.where(Job.owner_id == uuid.UUID(request.session.get("uid")))
         total_jobs = session.exec(q).one()
-        q = q.where(Job.status == "error")
-        error_jobs = session.exec(q).one()
+        q = q.where(Job.status == "completed")
+        completed_jobs = session.exec(q).one()
         q = select(func.count(Task.id))
         try:
             User.is_admin(request, session)
@@ -65,8 +66,8 @@ def statistics(request: Request, session: SessionDep) -> Statistics | Error:
                 Job.owner_id == uuid.UUID(request.session.get("uid"))
             )
         total_tasks = session.exec(q).one()
-        q = q.where(Task.status == "error")
-        error_tasks = session.exec(q).one()
+        q = q.where(Task.status == "completed")
+        completed_tasks = session.exec(q).one()
         q = select(func.count(SubDomain.id))
         try:
             User.is_admin(request, session)
@@ -95,9 +96,9 @@ def statistics(request: Request, session: SessionDep) -> Statistics | Error:
         services = session.exec(q).one()
         return Statistics(
             total_jobs=total_jobs,
-            error_jobs=error_jobs,
+            completed_jobs=completed_jobs,
             total_tasks=total_tasks,
-            error_tasks=error_tasks,
+            completed_tasks=completed_tasks,
             domains=domains,
             ips=ips,
             services=services,
@@ -178,3 +179,8 @@ def search_jobs(
         return session.exec(q).all()
     except Exception as e:
         return Error(message=str(e))
+
+
+@router.get("/search/protocols", dependencies=[Depends(User.is_authenticated)])
+def search_protocols() -> list[str]:
+    return SERVICE_SCAN_KEYWORDS.keys()
