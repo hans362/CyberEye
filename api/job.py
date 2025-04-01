@@ -149,6 +149,7 @@ def read_job_domains(
     request: Request,
     job_id: uuid.UUID,
     session: SessionDep,
+    search: str = "",
     offset: int = 0,
     limit: int = 100,
 ) -> JobDomainsRead | Error:
@@ -164,6 +165,7 @@ def read_job_domains(
         domains_ids = session.exec(
             select(SubDomain.id)
             .where(SubDomain.job_id == job_id)
+            .where(SubDomain.domain.like(f"%{search}%"))
             .order_by(SubDomain.domain)
             .offset(offset)
             .limit(limit)
@@ -189,7 +191,9 @@ def read_job_domains(
         return JobDomainsRead(
             domains=[{"domain": domain, "ips": domains[domain]} for domain in domains],
             total=session.exec(
-                select(func.count(SubDomain.id)).where(SubDomain.job_id == job_id)
+                select(func.count(SubDomain.id))
+                .where(SubDomain.job_id == job_id)
+                .where(SubDomain.domain.like(f"%{search}%"))
             ).one(),
         )
     except Exception as e:
@@ -201,6 +205,7 @@ def read_job_ips(
     request: Request,
     job_id: uuid.UUID,
     session: SessionDep,
+    search: str = "",
     offset: int = 0,
     limit: int = 100,
 ) -> JobIPsRead | Error:
@@ -216,6 +221,7 @@ def read_job_ips(
         ips_ids = session.exec(
             select(IPAddr.id)
             .where(IPAddr.job_id == job_id)
+            .where(IPAddr.ip.like(f"%{search}%"))
             .order_by(IPAddr.ip)
             .offset(offset)
             .limit(limit)
@@ -241,7 +247,9 @@ def read_job_ips(
         return JobIPsRead(
             ips=[{"ip": ip, "domains": ips[ip][0], "ports": ips[ip][1]} for ip in ips],
             total=session.exec(
-                select(func.count(IPAddr.id)).where(IPAddr.job_id == job_id)
+                select(func.count(IPAddr.id))
+                .where(IPAddr.job_id == job_id)
+                .where(IPAddr.ip.like(f"%{search}%"))
             ).one(),
         )
     except Exception as e:

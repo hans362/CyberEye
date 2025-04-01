@@ -1,7 +1,7 @@
 import subprocess
-import os
 import time
 import re
+from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 import concurrent.futures
@@ -10,38 +10,55 @@ import dns.query
 import dns.zone
 import logging
 import shutil
+import platform
+import uuid
+from typing import Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ActiveSubdomainScanner")
 logger.setLevel(logging.DEBUG)
 
+ROOT_DIR = Path(__file__).parent
+DICT_PATH = ROOT_DIR / "tools" / "wordlist.txt"
+TEMP_DIR = ROOT_DIR / "temp"
+MASSDNS_PATH = ROOT_DIR / "tools" / "massdns"
+
+def get_massdns_path() -> Path:
+    system = platform.system().lower()
+    machine = platform.machine().lower()
+    # 根据操作系统和架构生成massdns的名称
+    name = f'massdns_{system}_{machine}'
+    massdns_path = MASSDNS_PATH / name
+    # 如果是windows系统，则将名称改为massdns.exe
+    if system == 'windows':
+        name = f'massdns.exe'
+        massdns_path = MASSDNS_PATH / "windows" / name
+    return massdns_path
+
+
 '''使用了字典爆破、网页爬取、AXFR查询等方法，检测目标域名的子域名'''
 class ActiveSubdomainScanner():
-    def __init__(self, target_domain: str, dict_path: str = "tools/wordlist.txt",
-                 enable_massdns: bool = True, enable_axfr: bool = True, enable_html_crawling: bool = True):
-        self.dict_path = dict_path
+    def __init__(self, target_domain: str, enable_massdns: bool = True,
+                 enable_axfr: bool = True, enable_html_crawling: bool = True):
         self.target_domain = target_domain
         self.enable_massdns = enable_massdns
         self.enable_axfr = enable_axfr
         self.enable_html_crawling = enable_html_crawling
-        self.massdns_dir = r"tools\massdns"
-        self.temp_dir = "temp"
         self.dict = []
 
     def gen_dict(self, domains=None):
         if not domains:
             try:
-                with open(self.dict_path, "r") as f:
+                with open(DICT_PATH, "r") as f:
                     domains = [f"{line.strip()}.{self.target_domain}" for line in f.readlines()]
                     self.dict = domains
                     logger.info(f"Dictionary loaded with {len(domains)} entries.")
             except FileNotFoundError:
-                logger.error(f"Dictionary file '{self.dict_path}' not found.")
+                logger.error(f"Dictionary file '{DICT_PATH}' not found.")
                 return None
 
-        if not os.path.exists(self.temp_dir):
-            os.makedirs(self.temp_dir)
-        domains_path = os.path.join(self.temp_dir, "temp_domains.txt")
+        TEMP_DIR.mkdir(exist_ok=True)
+        domains_path = TEMP_DIR / f"{uuid.uuid4().hex}_domains.txt"
         with open(domains_path, 'w') as outfile:
             for domain in domains:
                 outfile.write(domain + '\n')
@@ -53,22 +70,25 @@ class ActiveSubdomainScanner():
         return domain.endswith("." + self.target_domain) and domain != self.target_domain
 
     # 使用massdns进行高效查询
-    def massdns_resolve(self, domains_path: str) -> str:
-        massdns_path = os.path.join(self.massdns_dir, r"bin\massdns.exe")
-        resolver_path = os.path.join(self.massdns_dir, r"lists\resolvers.txt")
-        if not os.path.exists(self.temp_dir):
-            os.makedirs(self.temp_dir)
-        out_file = os.path.join(self.temp_dir, "results.txt")
-        if not os.path.exists(massdns_path):
+    def massdns_resolve(self, domains_path: Path) -> Optional[Path]:
+        massdns_path = get_massdns_path()
+        resolver_path = MASSDNS_PATH /"lists" / "resolvers.txt"
+        TEMP_DIR.mkdir(exist_ok=True)
+        out_file = TEMP_DIR / f"{uuid.uuid4().hex}_results.txt"
+        if not massdns_path.exists():
             logger.error("MassDNS not found.")
-            return
-        os.chmod(massdns_path, 64)
+            return None
+        massdns_path.chmod(64)
         logger.info("Running MassDNS...")
-        command = f"{massdns_path} --quiet -r {resolver_path} -t A -o S {domains_path} > {out_file}"
-        subprocess.run(command, shell=True)
+        # command = f"{massdns_path} --quiet -r {resolver_path} -t A -o S {domains_path} > {out_file}"
+        # subprocess.run(command, shell=True)
+        # 路径中可能包含空格等特殊字符，不能直接拼接命令
+        with open(out_file, 'w') as outfile:
+            subprocess.run([massdns_path, '--quiet', '-r', resolver_path, '-t', 'A', '-o', 'S', domains_path], stdout=outfile)
+        domains_path.unlink()
         return out_file
 
-    def extract_domains_from_file(self, file_path: str) -> set[str]:
+    def extract_domains_from_file(self, file_path: Path) -> set[str]:
         domains = set()
         with open(file_path, 'r') as file:
             for line in file:
@@ -77,6 +97,7 @@ class ActiveSubdomainScanner():
                 if match:
                     domain = match.group(1).rstrip('.')  # 去掉结尾的点
                     domains.add(domain)
+        file_path.unlink()
         return domains
 
     def single_dns_resolve(self, domain: str) -> set[str]:
@@ -208,6 +229,7 @@ class ActiveSubdomainScanner():
             logger.info(f"AXFR query completed in {time3 - time2:.2f} seconds.")
 
         if self.enable_html_crawling:
+            time3 = time.time()
             logger.info("Starting HTML crawling...")
             new_domains = valid_domains.copy()
             crawled_domains = set()
@@ -239,10 +261,13 @@ class ActiveSubdomainScanner():
             f"Active subdomain scan completed: "
             f"{len(valid_domains)} valid subdomains discovered in {end_time - time1:.2f} seconds."
         )
-        shutil.rmtree(self.temp_dir)
+        try:
+            TEMP_DIR.rmdir()
+        except OSError:
+            pass
         return valid_domains
 
 
 if __name__ == "__main__":
-    scanner = ActiveSubdomainScanner("sjtu.edu.cn", "tools/wordlist.txt", True, True)
+    scanner = ActiveSubdomainScanner("sjtu.edu.cn", True, True)
     domains = scanner()

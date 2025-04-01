@@ -69,8 +69,11 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
             >
               <a-table
                 :columns="tasksColumns"
-                :data-source="tasks.filter(task => task.method_name === step.method_name)"
-                :pagination="false"
+                :data-source="tasks.filter(task => task.method_name === step.method_name).slice((step.pagination.current - 1) * step.pagination.pageSize, step.pagination.current * step.pagination.pageSize)"
+                :pagination="step.pagination"
+                @change="(pagination) => {
+                  step.pagination = pagination;
+                }"
               >
                 <template slot="name" slot-scope="text, record">
                   <a @click="fetchTask(record.id); taskDetailVisible = true">
@@ -117,6 +120,11 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
           <a-icon type="global"></a-icon>
           域名资产
         </span>
+        <a-form-item style="margin-bottom: 16px">
+          <a-input placeholder="搜索域名" @change="fetchJobDomains()" v-model="domainsSearch">
+            <a-icon slot="prefix" type="search"></a-icon>
+          </a-input>
+        </a-form-item>
         <a-table
           :columns="domainsColumns"
           :data-source="domains"
@@ -146,6 +154,11 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
           <a-icon type="api"></a-icon>
           IP 资产
         </span>
+        <a-form-item style="margin-bottom: 16px">
+          <a-input placeholder="搜索 IP 地址" @change="fetchJobIPs()" v-model="ipsSearch">
+            <a-icon slot="prefix" type="search"></a-icon>
+          </a-input>
+        </a-form-item>
         <a-table
           :columns="ipsColumns"
           :data-source="ips"
@@ -221,30 +234,55 @@ endblock %} {% block script %} {% raw %}
             name: '子域名收集',
             description: '收集目标子域名信息',
             time: null,
+            pagination: {
+              pageSize: 10,
+              current: 1,
+              total: 0,
+            },
           },
           {
             method_name: 'ip_resolve',
             name: 'IP 地址解析',
             description: '解析子域名 IP 地址',
             time: null,
+            pagination: {
+              pageSize: 10,
+              current: 1,
+              total: 0,
+            },
           },
           {
             method_name: 'port_scan',
             name: '端口扫描',
             description: '扫描主机的开放端口',
             time: null,
+            pagination: {
+              pageSize: 10,
+              current: 1,
+              total: 0,
+            },
           },
           {
             method_name: 'service_scan',
             name: '服务扫描',
             description: '扫描主机的已知服务',
             time: null,
+            pagination: {
+              pageSize: 10,
+              current: 1,
+              total: 0,
+            },
           },
           {
             method_name: 'complete',
             name: '完成测绘',
             description: '整理生成测绘结果',
             time: null,
+            pagination: {
+              pageSize: 10,
+              current: 1,
+              total: 0,
+            },
           },
         ],
         currentStep: 0,
@@ -276,6 +314,7 @@ endblock %} {% block script %} {% raw %}
           { title: "域名", scopedSlots: { customRender: "domain" },},
           { title: "IP 地址", scopedSlots: { customRender: "ip" },},
         ],
+        domainsSearch: '',
         ips: [],
         ipsPagination: {
           pageSize: 10,
@@ -287,6 +326,7 @@ endblock %} {% block script %} {% raw %}
           { title: "域名", scopedSlots: { customRender: "domain" },},
           { title: "开放端口", scopedSlots: { customRender: "port" },},
         ],
+        ipsSearch: '',
         services: [],
         servicesPagination: {
           pageSize: 10,
@@ -317,6 +357,9 @@ endblock %} {% block script %} {% raw %}
             this.tasks = res.data.tasks;
             this.steps.forEach((step) => {
               step.time = null;
+              step.pagination.total = this.tasks.filter(
+                (task) => task.method_name === step.method_name
+              ).length;
             });
             if (this.tasks.length > 0) {
               this.currentStep = this.steps.findIndex(
@@ -367,6 +410,7 @@ endblock %} {% block script %} {% raw %}
         axios
           .get(`/api/jobs/${jobId}/domains`, {
             params: {
+              search: this.domainsSearch,
               offset: (this.domainsPagination.current - 1) * this.domainsPagination.pageSize,
               limit: this.domainsPagination.pageSize,
             },
@@ -381,6 +425,7 @@ endblock %} {% block script %} {% raw %}
         axios
           .get(`/api/jobs/${jobId}/ips`, {
             params: {
+              search: this.ipsSearch,
               offset: (this.ipsPagination.current - 1) * this.ipsPagination.pageSize,
               limit: this.ipsPagination.pageSize,
             },
@@ -393,48 +438,28 @@ endblock %} {% block script %} {% raw %}
       fetchJobServices() {
         const jobId = window.location.pathname.split("/").pop();
         axios
-          .get(`/api/jobs/${jobId}/ips`, {
+          .get(`/api/jobs/${jobId}/services`, {
             params: {
-              offset: (this.ipsPagination.current - 1) * this.ipsPagination.pageSize,
-              limit: this.ipsPagination.pageSize,
+              offset: (this.servicesPagination.current - 1) * this.servicesPagination.pageSize,
+              limit: this.servicesPagination.pageSize,
             },
           })
           .then((res) => {
-            const r = res.data.ips.map((ip) => {
+            const r = res.data.services.map((service) => {
+              service.server = service.banner.match(/Server:\s*(.+?)\r\n/i) ? service.banner.match(/Server:\s*(.+?)\r\n/i)[1] : '未知';
+              service.powered_by = service.banner.match(/X-Powered-By:\s*(.+?)\r\n/i) ? service.banner.match(/X-Powered-By:\s*(.+?)\r\n/i)[1] : '未知';
+              service.title = service.banner.match(/<title>(.+?)<\/title>/i) ? service.banner.match(/<title>(.+?)<\/title>/i)[1] : '未知';
               return axios
-                .get(`/api/utils/ip/${ip.ip}`)
+                .get(`/api/utils/ip/${service.ip}`)
                 .then((res) => {
-                  Object.assign(ip, res.data);
+                  Object.assign(service, res.data);
                 })
                 .catch((err) => {
                 });
             });
             Promise.all(r).then(() => {
-              this.ips = res.data.ips;
-              this.ipsPagination.total = res.data.total;
-              axios
-                .get(`/api/jobs/${jobId}/services`, {
-                  params: {
-                    offset: (this.servicesPagination.current - 1) * this.servicesPagination.pageSize,
-                    limit: this.servicesPagination.pageSize,
-                  },
-                })
-                .then((res) => {
-                  res.data.services.map((service) => {
-                    const ip = this.ips.find((ip) => ip.ip === service.ip);
-                    service.asn = ip && typeof(ip.asn) === 'number' ? 'AS' + ip.asn.toString() : "未知";
-                    service.asn_organization = ip ? ip.asn_organization : "未知";
-                    service.country = ip ? ip.country : "未知";
-                    service.country_code = ip ? ip.country_code : "未知";
-                    service.city = ip ? ip.city : "未知";
-                    service.reverse_dns = ip ? ip.reverse_dns : "未知";
-                    service.server = service.banner.match(/Server:\s*(.+?)\r\n/i) ? service.banner.match(/Server:\s*(.+?)\r\n/i)[1] : '未知';
-                    service.powered_by = service.banner.match(/X-Powered-By:\s*(.+?)\r\n/i) ? service.banner.match(/X-Powered-By:\s*(.+?)\r\n/i)[1] : '未知';
-                    service.title = service.banner.match(/<title>(.+?)<\/title>/i) ? service.banner.match(/<title>(.+?)<\/title>/i)[1] : '未知';
-                  });
-                  this.services = res.data.services;
-                  this.servicesPagination.total = res.data.total;
-                });
+              this.services = res.data.services;
+              this.servicesPagination.total = res.data.total;
             });
           });
       },

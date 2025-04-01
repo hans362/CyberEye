@@ -8,6 +8,7 @@ from models import *
 
 from config import SCHEDULER_INTERVAL
 
+
 # 对于待启动的测绘项目，自动启动测绘项目，创建子域名收集任务
 def enter_subdomain_collect_stage():
     session = Session(engine)
@@ -80,7 +81,7 @@ def enter_ip_resolve_stage():
             continue
         try:
             subdomains = session.exec(
-                select(SubDomain).where(SubDomain.job_id == job.id)
+                select(SubDomain.domain).where(SubDomain.job_id == job.id)
             ).all()
             if len(subdomains) == 0:
                 job.status = "completed"
@@ -88,18 +89,15 @@ def enter_ip_resolve_stage():
                 session.commit()
                 session.refresh(job)
                 continue
-            session.add_all(
-                [
-                    Task(
-                        name=f"ip_resolve_{subdomain.domain}",
-                        method_name="ip_resolve",
-                        input=json.dumps({"domain": subdomain.domain}),
-                        output="",
-                        status="pending",
-                        job_id=job.id,
-                    )
-                    for subdomain in subdomains
-                ]
+            session.add(
+                Task(
+                    name=f"ip_resolve_{job.domain}",
+                    method_name="ip_resolve",
+                    input=json.dumps({"domains": list(subdomains)}),
+                    output="",
+                    status="pending",
+                    job_id=job.id,
+                )
             )
             session.commit()
         except Exception as e:
@@ -136,8 +134,14 @@ def enter_port_scan_stage():
             continue
         try:
             ips = set()
+            domains = dict()
             for task in ip_tasks:
-                ips.update(json.loads(task.output))
+                output = json.loads(task.output)
+                for domain in output:
+                    ips.update(output[domain])
+                    if domain not in domains:
+                        domains[domain] = []
+                    domains[domain].extend(output[domain])
             if len(ips) == 0:
                 job.status = "completed"
                 session.add(job)
@@ -153,23 +157,24 @@ def enter_port_scan_stage():
                     for ip in ips
                 ]
             )
-            for task in ip_tasks:
-                subdomain_id = session.exec(
-                    select(SubDomain.id)
-                    .where(SubDomain.domain == json.loads(task.input)["domain"])
-                    .where(SubDomain.job_id == job.id)
-                ).first()
-                session.add_all(
-                    [
-                        SubDomainIPAddr(
-                            subdomain_id=subdomain_id,
-                            ip_id=ip_id,
-                        )
-                        for ip_id in session.exec(
-                            select(IPAddr.id).where(IPAddr.job_id == job.id)
-                        ).all()
-                    ]
-                )
+            session.add_all(
+                [
+                    SubDomainIPAddr(
+                        subdomain_id=session.exec(
+                            select(SubDomain.id)
+                            .where(SubDomain.domain == domain)
+                            .where(SubDomain.job_id == job.id)
+                        ).first(),
+                        ip_id=session.exec(
+                            select(IPAddr.id)
+                            .where(IPAddr.ip == ip)
+                            .where(IPAddr.job_id == job.id)
+                        ).first(),
+                    )
+                    for domain in domains
+                    for ip in domains[domain]
+                ]
+            )
             session.commit()
         except Exception as e:
             session.rollback()

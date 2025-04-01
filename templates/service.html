@@ -1,6 +1,6 @@
 {% raw %}
 <a-card v-for="service in services" style="margin-bottom: 16px">
-  <a slot="title" @click="copyToClipboard('aaa.com')">
+  <a slot="title" @click="copyToClipboard(service.domain)">
     <a-icon type="global"></a-icon>
     {{ service.domain }}
   </a>
