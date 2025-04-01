@@ -1,3 +1,4 @@
+import os
 from .subdomain_scanner import ActiveSubdomainScanner
 import socket
 from concurrent.futures import ThreadPoolExecutor
@@ -36,9 +37,9 @@ def get_ip_addr(domain: str) -> list[str]:
 
 
 def ip_resolve(domains: list[str]) -> dict[str, list[str]]:
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
         results = list(executor.map(get_ip_addr, domains))
-    return {domain: ip for domain, ip in zip(domains, results)}
+    return {domain: ips for domain, ips in zip(domains, results)}
 
 
 if __name__ == "__main__":

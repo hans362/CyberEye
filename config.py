@@ -12,5 +12,30 @@ DATABASE_URL = f"mysql+pymysql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_H
 
 GEOIP_DATABASES_AUTO_UPDATE = False
 
+PORT_SCAN_RANGE = [
+    21,
+    22,
+    80,
+    81,
+    135,
+    139,
+    443,
+    445,
+    1433,
+    1521,
+    3306,
+    5432,
+    6379,
+    7001,
+    8000,
+    8080,
+    8089,
+    9000,
+    9200,
+    11211,
+    27017,
+]
+PORT_SCAN_TIMEOUT = 1
+
 SCHEDULER_INTERVAL = 5
 WORKER_INTERVAL = 1
