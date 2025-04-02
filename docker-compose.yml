@@ -10,6 +10,7 @@ services:
     environment:
       - DATABASE_HOST=db
       - ROLE=server
+      - TZ=Asia/Shanghai
   scheduler:
     build: .
     restart: always
@@ -19,6 +20,7 @@ services:
     environment:
       - DATABASE_HOST=db
       - ROLE=scheduler
+      - TZ=Asia/Shanghai
   worker:
     build: .
     restart: always
@@ -28,14 +30,16 @@ services:
     environment:
       - DATABASE_HOST=db
       - ROLE=worker
+      - TZ=Asia/Shanghai
     deploy:
-      replicas: 5
+      replicas: 8
   db:
     image: mysql:8
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: cybereye
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=cybereye
+      - TZ=Asia/Shanghai
     volumes:
       - db_data:/var/lib/mysql
 volumes:

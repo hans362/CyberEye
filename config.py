@@ -10,7 +10,9 @@ DATABASE_PASSWORD = os.environ.get("DATABASE_PASSWORD", "root")
 DATABASE_NAME = os.environ.get("DATABASE_NAME", "cybereye")
 DATABASE_URL = f"mysql+pymysql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}?charset=utf8mb4"
 
-GEOIP_DATABASES_AUTO_UPDATE = False
+GEOIP_DATABASES_AUTO_UPDATE = (
+    os.environ.get("GEOIP_DATABASES_AUTO_UPDATE", "False").lower() == "true"
+)
 
 PORT_SCAN_RANGE = [
     21,
@@ -39,7 +41,7 @@ PORT_SCAN_RANGE = [
     11211,
     27017,
 ]
-PORT_SCAN_TIMEOUT = 1
+PORT_SCAN_TIMEOUT = float(os.environ.get("PORT_SCAN_TIMEOUT", 1))
 SERVICE_SCAN_KEYWORDS = {
     "SSH": "SSH",
     "SMTP": "SMTP",
@@ -57,10 +59,12 @@ SERVICE_SCAN_KEYWORDS = {
     "RDP": "RDP",
     "LDAP": "LDAP",
 }
-SERVICE_SCAN_TIMEOUT = 2
+SERVICE_SCAN_TIMEOUT = float(os.environ.get("SERVICE_SCAN_TIMEOUT", 2))
 
-SCHEDULER_INTERVAL = 5
-WORKER_INTERVAL = 1
+SCHEDULER_INTERVAL = float(os.environ.get("SCHEDULER_INTERVAL", 2))
+WORKER_INTERVAL = float(os.environ.get("WORKER_INTERVAL", 0.2))
 
-VT_API_KEY = ""  # VirusTotal API密钥
-DNSDUMPSTER_API_KEY = ""  # DNSdumpster API密钥
+# VirusTotal API 密钥
+VT_API_KEY = os.environ.get("VT_API_KEY", "")
+# DNSdumpster API 密钥
+DNSDUMPSTER_API_KEY = os.environ.get("DNSDUMPSTER_API_KEY", "")
