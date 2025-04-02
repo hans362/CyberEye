@@ -111,6 +111,9 @@
     },
     mounted() {
       this.fetchStatistics();
+      setInterval(() => {
+        this.fetchStatistics();
+      }, 5000);
     },
   });
 </script>

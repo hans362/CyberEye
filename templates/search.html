@@ -111,6 +111,12 @@ menu_key %}search{% endblock %} {% block content %} {% raw %}
     <a-empty description="暂无数据"></a-empty>
   </div>
   <div v-else>
+    <a-alert
+      :message="`找到 ${servicesPagination.total} 条记录`"
+      type="info"
+      show-icon
+      style="margin-bottom: 16px"
+    ></a-alert>
     {% endraw %}{% include "service.html" %}{% raw %}
     <a-pagination
       style="text-align: center; margin-top: 16px"

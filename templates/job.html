@@ -25,6 +25,10 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
             已完成
           </a-tag>
           <a-tag v-else-if="job.status === 'failed'" color="red"> 失败 </a-tag>
+          <a-tag v-if="job.status === 'completed'" color="blue">
+            总用时 
+            {{ diffTime(new Date(tasks[tasks.length - 1].created_at), new Date(tasks[0].updated_at)) }}
+          </span>
         </a-descriptions-item>
         <a-descriptions-item label="项目创建时间">
           {{ new Date(job.created_at).toLocaleString() }}
@@ -57,7 +61,7 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
       <a-tab-pane key="1">
         <span slot="tab">
           <a-icon type="ordered-list"></a-icon>
-          测绘任务
+          测绘任务<span v-if="tasks.length > 0">({{ tasks.length }})</span>
         </span>
         <div>
           <a-collapse v-model="activeKey">
@@ -118,10 +122,10 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
       <a-tab-pane key="2">
         <span slot="tab">
           <a-icon type="global"></a-icon>
-          域名资产
+          域名资产<span v-if="domainsPagination.total > 0">({{ domainsPagination.total }})</span>
         </span>
         <a-form-item style="margin-bottom: 16px">
-          <a-input placeholder="搜索域名" @change="fetchJobDomains()" v-model="domainsSearch">
+          <a-input placeholder="搜索域名" @change="domainsPagination.current = 1; fetchJobDomains()" v-model="domainsSearch">
             <a-icon slot="prefix" type="search"></a-icon>
           </a-input>
         </a-form-item>
@@ -152,10 +156,10 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
       <a-tab-pane key="3">
         <span slot="tab">
           <a-icon type="api"></a-icon>
-          IP 资产
+          IP 资产<span v-if="ipsPagination.total > 0">({{ ipsPagination.total }})</span>
         </span>
         <a-form-item style="margin-bottom: 16px">
-          <a-input placeholder="搜索 IP 地址" @change="fetchJobIPs()" v-model="ipsSearch">
+          <a-input placeholder="搜索 IP 地址" @change="ipsPagination.current = 1; fetchJobIPs()" v-model="ipsSearch">
             <a-icon slot="prefix" type="search"></a-icon>
           </a-input>
         </a-form-item>
@@ -197,7 +201,7 @@ menu_key %}jobs{% endblock %} {% block content %} {% raw %}
       <a-tab-pane key="4">
         <span slot="tab">
           <a-icon type="database"></a-icon>
-          服务资产
+          服务资产<span v-if="servicesPagination.total > 0">({{ servicesPagination.total }})</span>
         </span>
         <div v-if="servicesLoading" style="text-align: center; margin-top: 64px; margin-bottom: 64px">
           <a-spin tip="加载中..." size="large">
@@ -475,6 +479,9 @@ endblock %} {% block script %} {% raw %}
     mounted() {
       this.fetchJob();
       this.fetchJobTasks();
+      this.fetchJobDomains();
+      this.fetchJobIPs();
+      this.fetchJobServices();
       setInterval(() => {
         this.fetchJob();
         this.fetchJobTasks();

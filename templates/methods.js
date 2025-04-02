@@ -75,7 +75,7 @@ copyToClipboard(text) {
 },
 diffTime(t1, t2) {
   const duration = moment.duration(moment(t2).diff(moment(t1)));
-  const seconds = Math.floor(duration.asSeconds());
+  const seconds = Math.floor(Math.abs(duration.asSeconds()));
   const s = seconds % 60;
   const m = Math.floor(seconds / 60) % 60;
   const h = Math.floor(seconds / 3600);
