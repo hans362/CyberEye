@@ -5,6 +5,8 @@ import concurrent.futures
 from pathlib import Path
 import socket
 
+from config import VT_API_KEY, DNSDUMPSTER_API_KEY
+
 # 配置日志记录
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("PassiveSubdomainScanner")
@@ -14,7 +16,7 @@ ROOT_DIR = Path(__file__).parent
 TEMP_DIR = ROOT_DIR / "temp"
 
 '''共有三种被动子域名查询方式：VirusTotal、Crtsh、DNSdumpster，并通过DNS解析验证域名是否有效'''
-'''使用前需于26和108行填入apikey'''
+'''使用前需于config.py中填写apikey'''
 
 class VirusTotalAPI:
     def __init__(self, domain: str):
@@ -23,7 +25,7 @@ class VirusTotalAPI:
         self.subdomains = set()
 
     def get_header(self):
-        vt_api_key = ""  # VirusTotal API密钥
+        vt_api_key = VT_API_KEY
         return {'x-apikey': vt_api_key}
 
     def get_subdomains(self):
@@ -105,7 +107,7 @@ class DNSdumpsterAPI:
         }
 
     def fetch(self):
-        dnsdumpster_api_key = ""  # DNSdumpster API密钥
+        dnsdumpster_api_key = DNSDUMPSTER_API_KEY
         headers = {**self.headers, "X-API-Key": dnsdumpster_api_key}
         try:
             response = requests.get(self.url, headers=headers)
