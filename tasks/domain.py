@@ -43,4 +43,4 @@ def ip_resolve(domains: list[str]) -> dict[str, list[str]]:
 
 
 if __name__ == "__main__":
-    print(subdomain_collect("example.com"))
+    print(subdomain_collect("sjtu.cn"))

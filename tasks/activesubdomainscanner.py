@@ -93,6 +93,10 @@ class ActiveSubdomainScanner():
         with open(file_path, 'r') as file:
             for line in file:
                 # 使用正则表达式提取域名
+                if line.strip("\n").strip("\r").strip().endswith(
+                    "0.0.0.0"
+                ) or line.strip("\n").strip("\r").strip().endswith("127.0.0.1"):
+                    continue
                 match = re.match(r'([a-zA-Z0-9.-]+)\s+(A|CNAME)\s+', line)
                 if match:
                     domain = match.group(1).rstrip('.')  # 去掉结尾的点
@@ -217,7 +221,6 @@ class ActiveSubdomainScanner():
             domains.update(found_domains)
         return domains
 
-
     def __call__(self):
         time1 = time.time()
         valid_domains = self.brute_force()
@@ -269,5 +272,5 @@ class ActiveSubdomainScanner():
 
 
 if __name__ == "__main__":
-    scanner = ActiveSubdomainScanner("sjtu.edu.cn", True, True)
+    scanner = ActiveSubdomainScanner("sjtu.cn", True, True)
     domains = scanner()
