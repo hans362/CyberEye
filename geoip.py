@@ -73,7 +73,9 @@ def get_asn(ip: str) -> dict | None:
     ASN_DATABASE: geoip2.database.Reader = globals()["ASN_DATABASE"]
     if ASN_DATABASE:
         try:
-            return ASN_DATABASE.asn(ip).__dict__.get("raw", {})
+            return ASN_DATABASE.asn(ip).__dict__.get(
+                "raw", ASN_DATABASE.asn(ip).__dict__
+            )
         except Exception:
             return None
     return None
@@ -86,7 +88,9 @@ def get_city(ip: str) -> dict | None:
     CITY_DATABASE: geoip2.database.Reader = globals()["CITY_DATABASE"]
     if CITY_DATABASE:
         try:
-            return CITY_DATABASE.city(ip).__dict__.get("raw", {})
+            return CITY_DATABASE.city(ip).__dict__.get(
+                "raw", CITY_DATABASE.city(ip).__dict__
+            )
         except Exception:
             return None
     return None
@@ -99,7 +103,9 @@ def get_country(ip: str) -> dict | None:
     COUNTRY_DATABASE: geoip2.database.Reader = globals()["COUNTRY_DATABASE"]
     if COUNTRY_DATABASE:
         try:
-            return COUNTRY_DATABASE.country(ip).__dict__.get("raw", {})
+            return COUNTRY_DATABASE.country(ip).__dict__.get(
+                "raw", COUNTRY_DATABASE.country(ip).__dict__
+            )
         except Exception:
             return None
     return None
