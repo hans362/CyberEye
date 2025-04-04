@@ -47,7 +47,7 @@ class ActiveSubdomainScanner():
         self.dict = []
 
     def gen_dict(self, domains=None):
-        if not domains:
+        if domains is None:
             try:
                 with open(DICT_PATH, "r") as f:
                     domains = [f"{line.strip()}.{self.target_domain}" for line in f.readlines()]
@@ -146,7 +146,7 @@ class ActiveSubdomainScanner():
 
     '''字典爆破'''
     def brute_force(self, domains=None) -> set[str]:
-        if not domains:
+        if domains is None:
             path = self.gen_dict()
             domains = self.dict
         else:
@@ -231,7 +231,7 @@ class ActiveSubdomainScanner():
             time3 = time.time()
             logger.info(f"AXFR query completed in {time3 - time2:.2f} seconds.")
 
-        if self.enable_html_crawling:
+        if self.enable_html_crawling and valid_domains:
             time3 = time.time()
             logger.info("Starting HTML crawling...")
             new_domains = valid_domains.copy()
