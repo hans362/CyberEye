@@ -178,8 +178,12 @@ class PassiveSubdomainScanner:
         return [subdomain for subdomain, valid in zip(subdomains, valid_subdomains) if valid]
 
     def __call__(self):
-        start_time = time.time()
+        if not isinstance(self.target_domain, str):
+            logger.error(f"Target domain must be a string, got {type(self.target_domain)}")
+            return set()
+        self.target_domain = self.target_domain.strip()
 
+        start_time = time.time()
         # 收集子域名
         self.get_subdomains_from_crtsh()
         self.get_subdomains_from_dnsdumpster()

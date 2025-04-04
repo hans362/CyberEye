@@ -90,18 +90,21 @@ class ActiveSubdomainScanner():
 
     def extract_domains_from_file(self, file_path: Path) -> set[str]:
         domains = set()
-        with open(file_path, 'r') as file:
-            for line in file:
-                # 使用正则表达式提取域名
-                if line.strip("\n").strip("\r").strip().endswith(
-                    "0.0.0.0"
-                ) or line.strip("\n").strip("\r").strip().endswith("127.0.0.1"):
-                    continue
-                match = re.match(r'([a-zA-Z0-9.-]+)\s+(A|CNAME)\s+', line)
-                if match:
-                    domain = match.group(1).rstrip('.')  # 去掉结尾的点
-                    domains.add(domain)
-        file_path.unlink()
+        try:
+            with open(file_path, 'r') as file:
+                for line in file:
+                    # 使用正则表达式提取域名
+                    if line.strip("\n").strip("\r").strip().endswith(
+                        "0.0.0.0"
+                    ) or line.strip("\n").strip("\r").strip().endswith("127.0.0.1"):
+                        continue
+                    match = re.match(r'([a-zA-Z0-9.-]+)\s+(A|CNAME)\s+', line)
+                    if match:
+                        domain = match.group(1).rstrip('.')  # 去掉结尾的点
+                        domains.add(domain)
+            file_path.unlink()
+        except Exception as e:
+            logger.error(f"Error extracting domains from temporary file {file_path}: {e}")
         return domains
 
     def single_dns_resolve(self, domain: str) -> set[str]:
@@ -152,7 +155,7 @@ class ActiveSubdomainScanner():
         else:
             path = self.gen_dict(domains)
         if not domains:
-            logger.error("Brute force failed: No domains available to resolve.")
+            logger.warning("Brute force failed: No domains available to resolve.")
             return set()
         if self.enable_massdns:
             out_file = self.massdns_resolve(path)
@@ -222,6 +225,11 @@ class ActiveSubdomainScanner():
         return domains
 
     def __call__(self):
+        if not isinstance(self.target_domain, str):
+            logger.error(f"Target domain must be a string, got {type(self.target_domain)}")
+            return set()
+        self.target_domain = self.target_domain.strip()
+
         time1 = time.time()
         valid_domains = self.brute_force()
         time2 = time.time()
