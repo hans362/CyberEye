@@ -44,6 +44,7 @@ class ActiveSubdomainScanner():
         self.enable_massdns = enable_massdns
         self.enable_axfr = enable_axfr
         self.enable_html_crawling = enable_html_crawling
+        self.max_iterations = 5
         self.dict = []
 
     def gen_dict(self, domains=None):
@@ -234,6 +235,7 @@ class ActiveSubdomainScanner():
         valid_domains = self.brute_force()
         time2 = time.time()
         logger.info(f"Brute-force completed in {time2 - time1:.2f} seconds, found {len(valid_domains)} valid subdomains.")
+
         if self.enable_axfr:
             valid_domains.update(self.axfr_query())
             time3 = time.time()
@@ -245,7 +247,9 @@ class ActiveSubdomainScanner():
             new_domains = valid_domains.copy()
             crawled_domains = set()
             with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
-                while new_domains:
+                iteration = 0
+                while new_domains and iteration < self.max_iterations:
+                    iteration += 1
                     temp = new_domains.copy()
                     new_domains.clear()
                     # 使用executor.map来并行执行 extract_subdomains
@@ -280,5 +284,5 @@ class ActiveSubdomainScanner():
 
 
 if __name__ == "__main__":
-    scanner = ActiveSubdomainScanner("sjtu.cn", True, True)
+    scanner = ActiveSubdomainScanner("sjtu.edu.cn", True, True)
     domains = scanner()
